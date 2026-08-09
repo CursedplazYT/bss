@@ -4836,13 +4836,13 @@ function BeeSwarmSimulator(DATA){
             cooldown:document.getElementById('preciseMark_cooldown'),
             amount:document.getElementById('preciseMark_amount'),
             maxCooldown:0,
-            tokenLife:4,
-            maxAmount:3,
+            tokenLife:8,
+            maxAmount:8,
             
             update:(amount,player)=>{
                 
-                player.criticalChance+=amount*0.07
-                player.superCritChance+=amount*0.07
+                player.criticalChance+=amount*0.3
+                player.superCritChance+=amount*0.2
             },
             
             getMessage:(amount)=>{
