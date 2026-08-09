@@ -5007,9 +5007,9 @@ function BeeSwarmSimulator(DATA){
             svg:document.getElementById('precision'),
             cooldown:document.getElementById('precision_cooldown'),
             amount:document.getElementById('precision_amount'),
-            maxCooldown:60,
-            tokenLife:4,
-            maxAmount:10,
+            maxCooldown:40,
+            tokenLife:8,
+            maxAmount:20,
             
             update:(amount,player)=>{
                 
