@@ -5290,7 +5290,7 @@ function BeeSwarmSimulator(DATA){
             
             getMessage:(amount)=>{
                 
-                return 'Oil\nx1.05 bee speed\nx1.05 walkspeed'
+                return 'Oil\nx1.2 bee speed\nx1.2 walkspeed'
             }
         },
         
@@ -5314,7 +5314,7 @@ function BeeSwarmSimulator(DATA){
             
             getMessage:(amount)=>{
                 
-                return 'Enzymes\nx2 convert rate\n+12% instant conversion'
+                return 'Enzymes\nx2 convert rate\n+20% instant conversion'
             }
         },
         
