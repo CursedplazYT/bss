@@ -5502,7 +5502,7 @@ function BeeSwarmSimulator(DATA){
             
             getMessage:(amount)=>{
                 
-                return 'Scorching Star Aura\nx'+Math.min(player.scorchingStarSize*0.00025+2,5).toFixed(2)+' red pollen\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' convert rate\nx'+Math.min(player.scorchingStarSize*0.00002+1,1.25).toFixed(2)+' bee attack\n+20% instant red conversion'
+                return 'Scorching Star Aura\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' red pollen\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' convert rate\nx'+Math.min(player.scorchingStarSize*0.00002+1,1.25).toFixed(2)+' bee attack\n+20% instant red conversion'
             }
         },
         
@@ -33025,9 +33025,9 @@ function BeeSwarmSimulator(DATA){
                 f.goo=1
 
                 let gooPattern=[
-                    [-1,-1],[0,-1],[1,-1],
-                    [-1,0],     [1,0],
-                    [-1,1],[0,1],[1,1]
+                    [-1,0],
+                    [0,1],
+                    [ 1,1]
                 ] 
 
                 for(let g of gooPattern){
@@ -33051,7 +33051,7 @@ function BeeSwarmSimulator(DATA){
                         )
                     }
                 }
-        }
+            }
             
             if(f.balloon){
                 
