@@ -5494,7 +5494,7 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.redPollen*=Math.min(player.scorchingStarSize*0.00025+2,10)
+                player.redPollen*=Math.min(player.scorchingStarSize*0.00025+2,20)
                 player.convertRate*=Math.min(player.scorchingStarSize*0.00025+2,5)
                 player.beeAttack*=Math.min(player.scorchingStarSize*0.00002+1,4)
                 player.instantRedConversion=MATH.applyPercentage(player.instantRedConversion,0.2)
@@ -5502,7 +5502,7 @@ function BeeSwarmSimulator(DATA){
             
             getMessage:(amount)=>{
                 
-                return 'Scorching Star Aura\nx'+Math.min(player.scorchingStarSize*0.00025+2,5).toFixed(2)+' red pollen\nx'+Math.min(player.scorchingStarSize*0.00025+2,10).toFixed(2)+' convert rate\nx'+Math.min(player.scorchingStarSize*0.00002+1,1.25).toFixed(2)+' bee attack\n+20% instant red conversion'
+                return 'Scorching Star Aura\nx'+Math.min(player.scorchingStarSize*0.00025+2,5).toFixed(2)+' red pollen\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' convert rate\nx'+Math.min(player.scorchingStarSize*0.00002+1,1.25).toFixed(2)+' bee attack\n+20% instant red conversion'
             }
         },
         
@@ -28082,7 +28082,7 @@ function BeeSwarmSimulator(DATA){
                 name:'plentyPlanter',
                 slot:'item',
                 viewMatrix:[-107,23,106.5+2,0,0],
-                cost:['100000000000000 honey','100 magicBean','25 swirledWax','25 causticWax','10 turpentine'],
+                cost:['100000000000000 honey','200 magicBean','100 swirledWax','100 causticWax','25 turpentine'],
                 desc:'Alone, grows in about 60m. Grants many bonus items such as fruits, crafting ingredients, and waxes.<br><br>• Grows x1.5 faster in the Coconut, Stump, Pepper, and Mountain Top fields.<br><br>• Grants x1.5 nectar.<br><br>• Gifted bees are 1.5x more likely to sip from this planter.'
             },{
 
@@ -33021,7 +33021,37 @@ function BeeSwarmSimulator(DATA){
             }
             
             if(params.replenish) f.height+=params.replenish
-            if(params.gooTrail) f.goo=1
+            if(params.gooTrail){
+                f.goo=1
+
+                let gooPattern=[
+                    [1,0],
+                    [0,1],
+                    [1,1]
+                ] 
+
+                for(let g of gooPattern){
+                    let gx=f.x+g[0]
+                    let gz=f.z+g[1]
+
+                    if(
+                        gx>=0 &&
+                        gx<fieldInfo[player.fieldIn].width &&
+                        gz>=0 &&
+                        gz<fieldInfo[player.fieldIn].length
+                    ){
+                        updateFlower(
+                            player.fieldIn,
+                            gx,
+                            gz,
+                            function(flower){flower.goo=1},
+                            false,
+                            true,
+                            false
+                        )
+                    }
+                }
+            }
             
             if(f.balloon){
                 

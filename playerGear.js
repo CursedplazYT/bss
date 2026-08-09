@@ -805,14 +805,14 @@ window.playerGear={
             applyStats:function(stats,player){
                 
                 stats.capacityMultiplier*=2
-                stats.redFieldCapacity*=1.75
-                stats.redPollen*=1.75
+                stats.redFieldCapacity*=1.5
+                stats.redPollen*=2.5
                 stats.beeAttack*=1.25
                 stats.instantFlameConversion=window.applyPercentage(stats.instantFlameConversion,0.5)
                 stats.flamePollen*=2
-                stats.redBeeAbilityRate*=1.2
-                stats.blueBeeAbilityRate*=1.2
-                stats.whiteBeeAbilityRate*=1.2
+                stats.redBeeAbilityRate*=2
+                stats.blueBeeAbilityRate*=2
+                stats.whiteBeeAbilityRate*=2
                 stats.defense+=0.35
                 player.addEffect('xFlamePassive')
                 player.addEffect('ignitePassive')
@@ -1244,14 +1244,14 @@ window.playerGear={
             applyStats:function(stats,player){
                 
                 stats.movementCollection+=15
-                stats.walkSpeed*=1.2
-                stats.jumpPower*=1.4
+                stats.walkSpeed*=1.3
+                stats.jumpPower*=1.5
                 stats.pollenFromCoconuts*=2
                 stats.goo*=1.25
                 stats.beeSpeed*=1.3
                 stats.honeyFromTokens*=1.25
-                stats.redPollen*=1.1
-                stats.bluePollen*=1.1
+                stats.redPollen*=1.7
+                stats.bluePollen*=1.7
                 stats.whitePollen*=1.1
                 stats.beeAttack*=1.1
                 stats.convertRateAtHive*=2
@@ -1468,9 +1468,9 @@ window.playerGear={
             applyStats:function(stats,player){
                 
                 stats.convertRate*=1.25
-                stats.redBeeAttack+=2
+                stats.redBeeAttack+=5
                 stats.capacity+=150000
-                stats.redPollen*=1.25
+                stats.redPollen*=2
                 stats.instantRedConversion=window.applyPercentage(stats.instantRedConversion,0.15)
                 stats.criticalChance+=0.08
             },
@@ -1623,7 +1623,7 @@ window.playerGear={
                 
                 stats.convertRate*=1.4
                 stats.capacity+=300000
-                stats.bluePollen*=1.35
+                stats.bluePollen*=2
                 stats.instantBlueConversion=window.applyPercentage(stats.instantBlueConversion,0.2)
                 stats.blueBombPollen*=1.5
                 stats.blueBeeAttack+=3
