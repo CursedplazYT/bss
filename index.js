@@ -5262,8 +5262,8 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.pollenFromTools*=1.25
-                player.pollenFromBees*=1.25
+                player.pollenFromTools*=1.5
+                player.pollenFromBees*=1.5
             },
             
             getMessage:(amount)=>{
@@ -5284,8 +5284,8 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.walkSpeed*=1.05
-                player.beeSpeed*=1.05
+                player.walkSpeed*=1.2
+                player.beeSpeed*=1.2
             },
             
             getMessage:(amount)=>{
@@ -5306,15 +5306,15 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.convertRate*=1.5
-                player.instantRedConversion=MATH.applyPercentage(player.instantRedConversion,0.12)
-                player.instantWhiteConversion=MATH.applyPercentage(player.instantWhiteConversion,0.12)
-                player.instantBlueConversion=MATH.applyPercentage(player.instantBlueConversion,0.12)
+                player.convertRate*=2
+                player.instantRedConversion=MATH.applyPercentage(player.instantRedConversion,0.2)
+                player.instantWhiteConversion=MATH.applyPercentage(player.instantWhiteConversion,0.2)
+                player.instantBlueConversion=MATH.applyPercentage(player.instantBlueConversion,0.2)
             },
             
             getMessage:(amount)=>{
                 
-                return 'Enzymes\nx1.5 convert rate\n+12% instant conversion'
+                return 'Enzymes\nx2 convert rate\n+12% instant conversion'
             }
         },
         
@@ -5330,12 +5330,12 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.redPollen*=1.25
+                player.redPollen*=2
             },
             
             getMessage:(amount)=>{
                 
-                return 'Red Extract\nx1.25 red pollen'
+                return 'Red Extract\nx2 red pollen'
             }
         },
         
@@ -5351,12 +5351,12 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.bluePollen*=1.25
+                player.bluePollen*=2
             },
             
             getMessage:(amount)=>{
                 
-                return 'Blue Extract\nx1.25 blue pollen'
+                return 'Blue Extract\nx2 blue pollen'
             }
         },
         
@@ -5373,12 +5373,12 @@ function BeeSwarmSimulator(DATA){
             update:(amount,player)=>{
                 
                 player.whitePollen*=1.25
-                player.criticalChance+=0.05
+                player.criticalChance+=0.3
             },
             
             getMessage:(amount)=>{
                 
-                return 'Tropical Drink\nx1.25 white pollen\n+5% critical chance'
+                return 'Tropical Drink\nx1.25 white pollen\n+30% critical chance'
             }
         },
         
@@ -5419,26 +5419,26 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.capacity*=1.5
-                player.whitePollen*=1.6
-                player.redPollen*=1.6
-                player.bluePollen*=1.6
-                player.pollenFromBees*=1.4
-                player.pollenFromTools*=1.4
-                player.convertRate*=1.5
-                player.convertRateAtHive*=1.5
-                player.instantRedConversion=MATH.applyPercentage(player.instantRedConversion,0.17)
-                player.instantWhiteConversion=MATH.applyPercentage(player.instantWhiteConversion,0.17)
-                player.instantBlueConversion=MATH.applyPercentage(player.instantBlueConversion,0.17)
-                player.criticalChance+=0.07
-                player.walkSpeed*=1.05
-                player.beeSpeed*=1.1
-                player.superCritChance+=0.01
+                player.capacity*=2
+                player.whitePollen*=3
+                player.redPollen*=3
+                player.bluePollen*=3
+                player.pollenFromBees*=2
+                player.pollenFromTools*=2
+                player.convertRate*=3
+                player.convertRateAtHive*=3
+                player.instantRedConversion=MATH.applyPercentage(player.instantRedConversion,0.3)
+                player.instantWhiteConversion=MATH.applyPercentage(player.instantWhiteConversion,0.3)
+                player.instantBlueConversion=MATH.applyPercentage(player.instantBlueConversion,0.3)
+                player.criticalChance+=0.3
+                player.walkSpeed*=1.1
+                player.beeSpeed*=1.15
+                player.superCritChance+=0.3
             },
             
             getMessage:(amount)=>{
                 
-                return 'Super Smoothie\nx1.5 capacity\nx1.6 pollen\nx1.4 pollen from bees\nx1.4 pollen from tools\nx1.5 convert rate\nx1.5 convert rate at hive\n+17% instant conversion\n+7% critical chance\nx1.05 walkspeed\nx1.1 bee speed\n+1% super-crit chance'
+                return 'Super Smoothie\nx2 capacity\nx3 pollen\nx2 pollen from bees\nx2 pollen from tools\nx3 convert rate\nx3 convert rate at hive\n+30% instant conversion\n+30% critical chance\nx1.1 walkspeed\nx1.15 bee speed\n+30% super-crit chance'
             }
         },
         
@@ -5454,7 +5454,7 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.beeAttack*=1.5
+                player.beeAttack*=3
             },
             
             getMessage:(amount)=>{
