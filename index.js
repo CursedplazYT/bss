@@ -4854,10 +4854,10 @@ function BeeSwarmSimulator(DATA){
         inferno:{
 
             desc:"Summons 4 flames and 2 temporary Fire Bees that last for 15s(+1s per lvl). The Fire Bees are gifted if this bee is gifted.<br><br>Flames last for 3s, collecting 10R/4W/1B pollen from 9 nearby flowers every second. Pollen collected is multiplied by 4% per red bee(8% is gifted). Flames also deal 15 damage to mobs every second. Standing in flames grant Flame Heat, lasting for 20s, and giving up to x2 red pollen and x1.2 bee attack.",
-            trialCooldown:20,trialRate:0.5,
+        trialCooldown:10,trialRate:0.8,
             statsToAddTo:['redAbilityTokens','battleTokens'],
             u:0,v:256/2048,
-            tokenLife:4,
+            tokenLife:7,
             
             func:function(params){
                 
