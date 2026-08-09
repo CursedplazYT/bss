@@ -33025,9 +33025,9 @@ function BeeSwarmSimulator(DATA){
                 f.goo=1
 
                 let gooPattern=[
-                    [1,0],
-                    [0,1],
-                    [1,1]
+                    [-1,-1],[0,-1],[1,-1],
+                    [-1,0],[1,0],
+                    [-1,1],[0,1],[1,1]
                 ] 
 
                 for(let g of gooPattern){
@@ -33051,7 +33051,7 @@ function BeeSwarmSimulator(DATA){
                         )
                     }
                 }
-            }
+        }
             
             if(f.balloon){
                 
