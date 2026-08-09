@@ -11756,7 +11756,7 @@ function BeeSwarmSimulator(DATA){
             
             player.stats.flames++
 
-            this.life=3*(player.flameFuel?1.5:1)*player.flameLife
+            this.life=9*(player.flameFuel?1.5:1)*player.flameLife
             this.isStatic=isStatic
             
             if(isStatic){
