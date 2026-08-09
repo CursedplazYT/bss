@@ -6185,7 +6185,7 @@ function BeeSwarmSimulator(DATA){
             cooldown:document.getElementById('ignitePassive_cooldown'),
             amount:document.getElementById('ignitePassive_amount'),
             maxCooldown:0.5,
-            triggerVal:10,
+            triggerVal:7,
             triggerType:'redAbilityTokens',
             currentVal:0,
             currentCooldown:0,
