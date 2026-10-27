@@ -5494,7 +5494,7 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.redPollen*=Math.min(player.scorchingStarSize*0.00025+2,20)
+                player.redPollen*=Math.min(player.scorchingStarSize*0.00025+6,60)
                 player.convertRate*=Math.min(player.scorchingStarSize*0.00025+2,5)
                 player.beeAttack*=Math.min(player.scorchingStarSize*0.00002+1,4)
                 player.instantRedConversion=MATH.applyPercentage(player.instantRedConversion,0.2)
@@ -5502,7 +5502,7 @@ function BeeSwarmSimulator(DATA){
             
             getMessage:(amount)=>{
                 
-                return 'Scorching Star Aura\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' red pollen\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' convert rate\nx'+Math.min(player.scorchingStarSize*0.00002+1,1.25).toFixed(2)+' bee attack\n+20% instant red conversion'
+                return 'Scorching Star Aura\nx'+Math.min(player.scorchingStarSize*0.00025+6,60).toFixed(2)+' red pollen\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' convert rate\nx'+Math.min(player.scorchingStarSize*0.00002+1,1.25).toFixed(2)+' bee attack\n+20% instant red conversion'
             }
         },
         
