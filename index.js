@@ -17091,7 +17091,7 @@ function BeeSwarmSimulator(DATA){
                 let x=Math.round(p[0]-fieldInfo[player.fieldIn].x),
                     z=Math.round(p[2]-fieldInfo[player.fieldIn].z),
                     a=Math.min(collectPollen({x:x,z:z,pattern:[[0,0],[-1,0],[1,0],[0,1],[0,-1]],amount:5+0.05*player.attackTotal,stackHeight:0.5,instantConversion:1}),player.pollen)
-                a = Math.min(player.pollen, Math.max(a, player.capacity * 0.2))
+                a = Math.min(player.pollen, Math.max(a, player.capacity * 0.13))
                 if(a){
                     
                     player.pollen-=a
