@@ -33001,7 +33001,7 @@ function BeeSwarmSimulator(DATA){
         instantConversion.r=crit.r===2?1:instantConversion.r
         instantConversion.w=crit.w===2?1:instantConversion.w
         instantConversion.b=crit.b===2?1:instantConversion.b
-        instantConversion.r *= 0.9
+        instantConversion.r *= 1.5
         function collectFunction(f){
                     
             let amountToCollect=Math.min(amount[f.color[0]],f.height*100),amp=amountToCollect*0.01
