@@ -5494,7 +5494,7 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.redPollen*=Math.min(player.scorchingStarSize*0.01+8,300)
+                player.redPollen*=Math.min(player.scorchingStarSize*0.01+4,300)
                 player.convertRate*=Math.min(player.scorchingStarSize*0.00025+2,5)
                 player.beeAttack*=Math.min(player.scorchingStarSize*0.00002+1,4)
                 player.instantRedConversion=MATH.applyPercentage(player.instantRedConversion,0.2)
@@ -17091,7 +17091,7 @@ function BeeSwarmSimulator(DATA){
                 let x=Math.round(p[0]-fieldInfo[player.fieldIn].x),
                     z=Math.round(p[2]-fieldInfo[player.fieldIn].z),
                     a=Math.min(collectPollen({x:x,z:z,pattern:[[0,0],[-1,0],[1,0],[0,1],[0,-1]],amount:5+0.05*player.attackTotal,stackHeight:0.5,instantConversion:1}),player.pollen)
-
+                a = Math.min(player.pollen, Math.max(a, player.capacity * 0.1))
                 if(a){
                     
                     player.pollen-=a
