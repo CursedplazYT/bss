@@ -5494,7 +5494,7 @@ function BeeSwarmSimulator(DATA){
             
             update:(amount,player)=>{
                 
-                player.redPollen*=Math.min(player.scorchingStarSize*0.00025+6,60)
+                player.redPollen*=Math.min(player.scorchingStarSize*0.00025+10,100)
                 player.convertRate*=Math.min(player.scorchingStarSize*0.00025+2,5)
                 player.beeAttack*=Math.min(player.scorchingStarSize*0.00002+1,4)
                 player.instantRedConversion=MATH.applyPercentage(player.instantRedConversion,0.2)
@@ -5502,7 +5502,7 @@ function BeeSwarmSimulator(DATA){
             
             getMessage:(amount)=>{
                 
-                return 'Scorching Star Aura\nx'+Math.min(player.scorchingStarSize*0.00025+6,60).toFixed(2)+' red pollen\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' convert rate\nx'+Math.min(player.scorchingStarSize*0.00002+1,1.25).toFixed(2)+' bee attack\n+20% instant red conversion'
+                return 'Scorching Star Aura\nx'+Math.min(player.scorchingStarSize*0.00025+10,100).toFixed(2)+' red pollen\nx'+Math.min(player.scorchingStarSize*0.00025+2,20).toFixed(2)+' convert rate\nx'+Math.min(player.scorchingStarSize*0.00002+1,1.25).toFixed(2)+' bee attack\n+20% instant red conversion'
             }
         },
         
@@ -11878,7 +11878,7 @@ function BeeSwarmSimulator(DATA){
             
             if(Math.abs(player.body.position.x-this.pos[0])+Math.abs(player.body.position.y-this.pos[1])+Math.abs(player.body.position.z-this.pos[2])<2){
                 
-                player.stats.scorchingStar+=dt*(this.dark?120:90)
+                player.stats.scorchingStar+=dt*(this.dark?240:180)
                 player.addEffect('flameHeat',this.dark?0.00025:0.0001)
             }
             
@@ -16880,7 +16880,7 @@ function BeeSwarmSimulator(DATA){
             
             this.life-=dt
             this.value=player.stats.scorchingStar-this.startValue
-            this.size=Math.min(Math.sqrt(this.value*0.045)*0.05+0.5,2)
+            this.size=Math.min(Math.sqrt(this.value*0.045)*0.05+0.5,4.5)
             player.scorchingStarSize=this.value
             
             gl.bindBuffer(gl.ARRAY_BUFFER,meshes.scorchingStar.vertBuffer)
