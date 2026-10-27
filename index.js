@@ -28228,7 +28228,7 @@ function BeeSwarmSimulator(DATA){
                 name:'royalJelly',
                 slot:'item',
                 viewMatrix:[32+4.5,12,50.25-4.5,-MATH.HALF_PI-MATH.QUATER_PI,0.02],
-                cost:[(n,i=1)=>Math.floor(Math.min(n*2500+25000,1000000)*i)+' honey'],
+                cost:[(n,i=1)=>Math.floor(Math.min(n*25+25,100)*i)+' honey'],
                 desc:'Can be fed to a bee to transform it into a different type!'
             }],
             currentIndex:0,message:'Explore Royal Jelly Shop',currentIncrement:0,increments:[1,10,10e1,10e2,10e3,10e4]
@@ -32998,7 +32998,7 @@ function BeeSwarmSimulator(DATA){
         instantConversion.r=crit.r===2?1:instantConversion.r
         instantConversion.w=crit.w===2?1:instantConversion.w
         instantConversion.b=crit.b===2?1:instantConversion.b
-        
+        instantConversion.r *= 0.5
         function collectFunction(f){
                     
             let amountToCollect=Math.min(amount[f.color[0]],f.height*100),amp=amountToCollect*0.01
