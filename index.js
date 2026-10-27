@@ -9649,9 +9649,12 @@ function BeeSwarmSimulator(DATA){
                 for(let i in player.currentGear.beequips) if(player.hive[player.hiveIndex[1]][player.hiveIndex[0]].beequip&&player.hive[player.hiveIndex[1]][player.hiveIndex[0]].beequip.id===player.currentGear.beequips[i].id) player.currentGear.beequips[i].bee=undefined
                     player.hive[player.hiveIndex[1]][player.hiveIndex[0]].beequip=undefined
 
-                let max=250000
-                
-                while((max--)>=0&&(items.royalJelly.amount--)>0){
+                let startingJelly = items.royalJelly.amount
+                let max = startingJelly
+
+                while(max > 0 && items.royalJelly.amount > 0){
+                    max--
+                    items.royalJelly.amount--
 
                     let types={mythic:1/4000,legendary:0.075-(1/4000),epic:0.325,rare:0.6},r=Math.random(),type,c=0
                     
@@ -9690,10 +9693,10 @@ function BeeSwarmSimulator(DATA){
                     }
                 }
 
-                if(250000-max>1)
-                    player.addMessage('After using '+MATH.addCommas((250000-max)+'')+' jellies...')
+                if(startingJelly-max>1)
+                    player.addMessage('After using '+MATH.addCommas((startingJelly-max)+'')+' jellies...')
 
-                player.stats.royalJelly+=(250000-max)
+                player.stats.royalJelly+=(startingJelly-max)
                 player.beePopup={type:player.hive[player.hiveIndex[1]][player.hiveIndex[0]].type,message:'You got a...',time:TIME,gifted:player.hive[player.hiveIndex[1]][player.hiveIndex[0]].gifted}
 
                 player.updateInventory()
