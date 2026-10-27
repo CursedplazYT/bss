@@ -16907,9 +16907,9 @@ function BeeSwarmSimulator(DATA){
             gl.uniform2f(glCache.mob_instanceInfo2,this.size,1)
             gl.drawElements(gl.TRIANGLES,meshes.scorchingStar.indexAmount,gl.UNSIGNED_SHORT,0)
             
-            p[0]+=player.cameraDir[0]
-            p[1]+=player.cameraDir[1]
-            p[2]+=player.cameraDir[2]
+            p[0]+=player.cameraDir[0]*this.size
+            p[1]+=player.cameraDir[1]*this.size
+            p[2]+=player.cameraDir[2]*this.size
             p[1]+=0.1
             textRenderer.addSingle((this.value|0).toString(),p.slice(),COLORS.whiteArr,-2)
             p[1]-=0.3
@@ -33001,6 +33001,9 @@ function BeeSwarmSimulator(DATA){
         instantConversion.r=crit.r===2?1:instantConversion.r
         instantConversion.w=crit.w===2?1:instantConversion.w
         instantConversion.b=crit.b===2?1:instantConversion.b
+        instantConversion.r = Math.min(instantConversion.r, 0.8)
+        instantConversion.w = Math.min(instantConversion.w, 0.8)
+        instantConversion.b = Math.min(instantConversion.b, 0.8)
         function collectFunction(f){
                     
             let amountToCollect=Math.min(amount[f.color[0]],f.height*100),amp=amountToCollect*0.01
