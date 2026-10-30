@@ -10335,7 +10335,7 @@ function BeeSwarmSimulator(DATA){
             this.pos=pos.slice()
             this.type=type
             this.flowerIn=null
-            this.moveTo=[player.body.position.x,player.body.position.y,player.body.position.z]
+            this.moveTo=[(player.beeWorkPosition||player.body.position).x,(player.beeWorkPosition||player.body.position).y,(player.beeWorkPosition||player.body.position).z]
             this.moveOffset=[MATH.random(-5,5),0,MATH.random(-5,5)]
             this.moveDir=[]
             
@@ -10578,7 +10578,7 @@ function BeeSwarmSimulator(DATA){
                             
                             token=this.attackTokens[token].type
                             
-                            objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),player.body.position.y+0.5,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this},true))
+                            objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),(player.beeWorkPosition||player.body.position).y+0.5,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this},true))
                             
                         }
                     }
@@ -10648,7 +10648,7 @@ function BeeSwarmSimulator(DATA){
                         return
                     }
                     
-                    this.moveTo=[player.body.position.x+this.moveOffset[0],player.body.position.y,player.body.position.z+this.moveOffset[2]]
+                    this.moveTo=[(player.beeWorkPosition||player.body.position).x+this.moveOffset[0],(player.beeWorkPosition||player.body.position).y,(player.beeWorkPosition||player.body.position).z+this.moveOffset[2]]
                     vec3.sub(this.moveDir,this.moveTo,this.pos)
                     vec3.normalize(this.moveDir,this.moveDir)
                     vec3.scaleAndAdd(this.pos,this.pos,this.moveDir,dt*this.speed*player.beeSpeed*(this.type==='spicy'?player.flameHeatStackApplied:1))
@@ -10880,7 +10880,7 @@ function BeeSwarmSimulator(DATA){
                         this.state='moveToHiveToConvert'
                         player.honey+=Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1))
                         
-                        textRenderer.add(Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1)),[player.body.position.x,player.body.position.y+Math.random()*2+0.5,player.body.position.z],COLORS.honey,0,'+')
+                        textRenderer.add(Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1)),[(player.beeWorkPosition||player.body.position).x,(player.beeWorkPosition||player.body.position).y+Math.random()*2+0.5,(player.beeWorkPosition||player.body.position).z],COLORS.honey,0,'+')
                         
                         this.pollen=0
                         
@@ -10950,7 +10950,7 @@ function BeeSwarmSimulator(DATA){
                         this.state='moveToHiveToConvertBalloon'
                         player.honey+=Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1))
                         
-                        textRenderer.add(Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1)),[player.body.position.x,player.body.position.y+Math.random()*2+0.5,player.body.position.z],COLORS.honey,0,'+')
+                        textRenderer.add(Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1)),[(player.beeWorkPosition||player.body.position).x,(player.beeWorkPosition||player.body.position).y+Math.random()*2+0.5,(player.beeWorkPosition||player.body.position).z],COLORS.honey,0,'+')
                         
                         this.pollen=0
                         
@@ -11135,9 +11135,9 @@ function BeeSwarmSimulator(DATA){
                     
                     this.triangulateTimer-=dt
                     
-                    let d=[player.body.position.x-this.triangulateTokenPos[0],player.body.position.z-this.triangulateTokenPos[2]],
+                    let d=[(player.beeWorkPosition||player.body.position).x-this.triangulateTokenPos[0],(player.beeWorkPosition||player.body.position).z-this.triangulateTokenPos[2]],
                         rd=[-d[1],d[0]],
-                        tb=[this.pos[0]-player.body.position.x,this.pos[2]-player.body.position.z]
+                        tb=[this.pos[0]-(player.beeWorkPosition||player.body.position).x,this.pos[2]-(player.beeWorkPosition||player.body.position).z]
                     
                     if(rd[0]*tb[0]+rd[1]*tb[1]>0){
                         
@@ -11172,7 +11172,7 @@ function BeeSwarmSimulator(DATA){
 
                     if(Math.abs(this.moveDir[0])+Math.abs(this.moveDir[1])+Math.abs(this.moveDir[2])<1.2){
 
-                        let dir=[player.body.position.x-this.pos[0],player.body.position.z-this.pos[2]]
+                        let dir=[(player.beeWorkPosition||player.body.position).x-this.pos[0],(player.beeWorkPosition||player.body.position).z-this.pos[2]]
 
                         vec2.normalize(dir,dir)
 
@@ -11240,7 +11240,7 @@ function BeeSwarmSimulator(DATA){
             this.pos=pos.slice()
             this.type=type
             this.flowerIn=null
-            this.moveTo=[player.body.position.x,player.body.position.y,player.body.position.z]
+            this.moveTo=[(player.beeWorkPosition||player.body.position).x,(player.beeWorkPosition||player.body.position).y,(player.beeWorkPosition||player.body.position).z]
             this.moveOffset=[MATH.random(-5,5),0,MATH.random(-5,5)]
             this.moveDir=[]
             
@@ -11419,7 +11419,7 @@ function BeeSwarmSimulator(DATA){
                         return
                     }
                     
-                    this.moveTo=[player.body.position.x+this.moveOffset[0],player.body.position.y,player.body.position.z+this.moveOffset[2]]
+                    this.moveTo=[(player.beeWorkPosition||player.body.position).x+this.moveOffset[0],(player.beeWorkPosition||player.body.position).y,(player.beeWorkPosition||player.body.position).z+this.moveOffset[2]]
                     vec3.sub(this.moveDir,this.moveTo,this.pos)
                     vec3.normalize(this.moveDir,this.moveDir)
                     vec3.scaleAndAdd(this.pos,this.pos,this.moveDir,dt*this.speed*player.beeSpeed*(this.type==='spicy'?player.flameHeatStackApplied:1))
@@ -11649,9 +11649,9 @@ function BeeSwarmSimulator(DATA){
                     
                     this.triangulateTimer-=dt
                     
-                    let d=[player.body.position.x-this.triangulateTokenPos[0],player.body.position.z-this.triangulateTokenPos[2]],
+                    let d=[(player.beeWorkPosition||player.body.position).x-this.triangulateTokenPos[0],(player.beeWorkPosition||player.body.position).z-this.triangulateTokenPos[2]],
                         rd=[-d[1],d[0]],
-                        tb=[this.pos[0]-player.body.position.x,this.pos[2]-player.body.position.z]
+                        tb=[this.pos[0]-(player.beeWorkPosition||player.body.position).x,this.pos[2]-(player.beeWorkPosition||player.body.position).z]
                     
                     if(rd[0]*tb[0]+rd[1]*tb[1]>0){
                         
@@ -34636,6 +34636,13 @@ function BeeSwarmSimulator(DATA){
         
         gl.uniformMatrix4fv(glCache.bee_viewMatrix,gl.FALSE,player.viewMatrix)
         convertFullBagDuringStarSaw(player,objects.mobs.some(mob=>mob instanceof StarSaw&&mob.life>0))
+        const actualBeeField=player.fieldIn,actualBeeFlower=player.flowerIn
+        const beeWork=getBeeFieldWork(player,TIME)
+        // Scope the remembered field to bee simulation; restore it before rendering/gameplay.
+        player.fieldIn=beeWork.field
+        player.flowerIn=beeWork.flower
+        player.beeWorkPosition=beeWork.position
+        try{
         // Keep bees working for 10 seconds after the backpack fills.
         if(!player.fieldIn || player.pollen < player.capacity){
             player.fullBagSince = null
@@ -34668,6 +34675,12 @@ function BeeSwarmSimulator(DATA){
             }
         }
         
+        }finally{
+            player.fieldIn=actualBeeField
+            player.flowerIn=actualBeeFlower
+            player.beeWorkPosition=null
+        }
+
         gl.bindTexture(gl.TEXTURE_2D,textures.bees)
         
         gl.bindBuffer(gl.ARRAY_BUFFER,meshes.bee.vertBuffer)
@@ -35317,4 +35330,20 @@ function updateBssRates(player){
         state.lastPaint=now
     }
     return state
+}
+
+function getBeeFieldWork(player,time){
+    if(player.dead){player.beeFieldMemory=null;return {field:null,flower:null,position:null}}
+    if(player.fieldIn&&player.flowerIn){
+        const p=player.body.position
+        player.beeFieldMemory={field:player.fieldIn,flower:{x:player.flowerIn.x,z:player.flowerIn.z},position:{x:p.x,y:p.y,z:p.z},leftAt:null}
+        return {field:player.fieldIn,flower:player.flowerIn,position:null}
+    }
+    const memory=player.beeFieldMemory
+    if(memory){
+        if(memory.leftAt===null)memory.leftAt=time
+        if(time-memory.leftAt<2)return memory
+        player.beeFieldMemory=null
+    }
+    return {field:null,flower:null,position:null}
 }
