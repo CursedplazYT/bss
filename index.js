@@ -1,4 +1,6 @@
 function main(){
+    createBssAudio()
+
 
     //IndexedDB code from Willard
     async function createDatabase() {
@@ -295,6 +297,9 @@ function main(){
 var _M=Math
 
 function BeeSwarmSimulator(DATA){
+    const gameAudio=createBssAudio()
+    gameAudio.reset()
+
 
     let Math=_M,width=window.thisProgramIsInFullScreen?500:window.innerWidth+1,height=window.thisProgramIsInFullScreen?500:window.innerHeight+1,half_width=width*0.5,half_height=height*0.5,aspect=width/height,FETCHED_CODE={},beeCanvas,UPDATE_FLOWER_MESH=true,GIFTED_BEE_TEXTURE_OFFSET=768/2048
 
@@ -5759,7 +5764,7 @@ function BeeSwarmSimulator(DATA){
             
             activate(){
                 
-                if(player.beesCanWork){
+                if(player.fieldIn){
                     
                     objects.mobs.push(new StarShower(player.fieldIn))
                 }
@@ -10580,7 +10585,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'moveToPlayer':
                     
-                    if(player.fieldIn){
+                    if(player.beesCanWork){
                         
                         if(fieldInfo[player.fieldIn].planter){
 
@@ -11403,7 +11408,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'moveToPlayer':
                     
-                    if(player.fieldIn){
+                    if(player.beesCanWork){
                         
                         this.state='moveToFlower'
                         return
@@ -11434,7 +11439,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'moveToFlower':
                     
-                    if(!player.fieldIn||player.pollen>=player.capacity){
+                    if(!player.beesCanWork){
                         
                         this.state='moveToPlayer'
                         break
@@ -11469,7 +11474,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'collectPollen':
                     
-                    if(!player.fieldIn||player.pollen>=player.capacity){
+                    if(!player.beesCanWork){
                         
                         this.state='moveToPlayer'
                         return
@@ -30046,6 +30051,7 @@ function BeeSwarmSimulator(DATA){
             if(!this.collected){
                 
                 this.collected=true
+                gameAudio.token(this.type)
                 this.life=0.75
                 player.stats.abilityTokens++
                 
@@ -30238,6 +30244,7 @@ function BeeSwarmSimulator(DATA){
             if(!this.collected){
                 
                 this.collected=true
+                gameAudio.token(this.type)
                 this.life=0.75
                 player.stats.abilityTokens++
                 
@@ -34540,6 +34547,7 @@ function BeeSwarmSimulator(DATA){
         player.hiveMesh.render()
         
         player.updateFields()
+        gameAudio.tick(player,isBeesmas,triggers,TIME)
         
         gl.useProgram(beeGeometryProgram)
         
@@ -34806,4 +34814,129 @@ function BeeSwarmSimulator(DATA){
         window.objects=objects
     }
     
+}
+
+const BSS_AUDIO_FILES={
+    "antmarch1": "audio/bss/antmarch1.ogg",
+    "babyLove": "audio/bss/babyLove.ogg",
+    "bombToken": "audio/bss/bombToken.mp3",
+    "boostToken": "audio/bss/boostToken.mp3",
+    "bpatrol": "audio/bss/bpatrol.ogg",
+    "crawlers": "audio/bss/crawlers.ogg",
+    "digitize": "audio/bss/digitize.ogg",
+    "drone": "audio/bss/drone.ogg",
+    "flameFuelToken": "audio/bss/flameFuelToken.ogg",
+    "focusToken": "audio/bss/focusToken.ogg",
+    "frog": "audio/bss/frog.ogg",
+    "gbtune1": "audio/bss/gbtune1.ogg",
+    "gummyStar": "audio/bss/gummyStar.ogg",
+    "haste": "audio/bss/haste.mp3",
+    "hibernation": "audio/bss/hibernation.ogg",
+    "infernoToken": "audio/bss/infernoToken.ogg",
+    "inflateBalloons": "audio/bss/inflateBalloons.ogg",
+    "inspireToken": "audio/bss/inspireToken.ogg",
+    "markToken": "audio/bss/markToken.ogg",
+    "melodyToken": "audio/bss/melodyToken.ogg",
+    "mountaincall": "audio/bss/mountaincall.ogg",
+    "nectar": "audio/bss/nectar.mp3",
+    "overflowin4": "audio/bss/overflowin4.ogg",
+    "popStar": "audio/bss/popStar.ogg",
+    "rageToken": "audio/bss/rageToken.mp3",
+    "rbcloading": "audio/bss/rbcloading.ogg",
+    "scorchingStar": "audio/bss/scorchingStar.ogg",
+    "starhall": "audio/bss/starhall.ogg",
+    "stickbug": "audio/bss/stickbug.ogg",
+    "surpriseParty": "audio/bss/surpriseParty.ogg",
+    "vendor": "audio/bss/vendor.ogg",
+    "wax": "audio/bss/wax.ogg"
+}
+
+function createBssAudio(){
+    if(window.bssAudio) return window.bssAudio
+    const files=BSS_AUDIO_FILES
+    let settings={music:0.3,effects:0.55,muted:false,track:'auto'}
+    try{Object.assign(settings,JSON.parse(localStorage.getItem('bss-audio-settings')||'{}'))}catch(e){}
+    settings.music=Math.max(0,Math.min(1,Number(settings.music)||0))
+    settings.effects=Math.max(0,Math.min(1,Number(settings.effects)||0))
+    const music=new Audio(),playing=new Set(),lastPlayed={}
+    music.loop=true
+    music.preload='none'
+    let unlocked=false,current='',desired='wax',failed='',lastTick=-Infinity
+    const panel=document.createElement('details')
+    panel.id='bss-audio-controls'
+    panel.style.cssText='position:fixed;bottom:12px;right:12px;z-index:100000;background:#fff4cb;color:#302508;border:2px solid #b58a15;border-radius:10px;padding:8px;font:14px Arial;max-width:260px;box-shadow:0 2px 10px #0004;user-select:auto'
+    panel.innerHTML='<summary style="cursor:pointer">Audio</summary><div style="display:grid;gap:8px;padding-top:10px"><button type="button" data-mute style="width:auto">Mute</button><label>Music <input data-music type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>Effects <input data-effects type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>Track <select data-track style="max-width:180px"></select></label><small data-status>Click or press a key to enable audio.</small></div>'
+    document.body.appendChild(panel)
+    const status=panel.querySelector('[data-status]'),mute=panel.querySelector('[data-mute]'),select=panel.querySelector('[data-track]')
+    const tracks=['wax','bpatrol','overflowin4','mountaincall','vendor','antmarch1','stickbug','digitize','rbcloading','crawlers','starhall','gbtune1','drone','hibernation','nectar']
+    for(const name of ['auto',...tracks]){
+        const option=document.createElement('option');option.value=name;option.textContent=name==='auto'?'Automatic':name;select.appendChild(option)
+    }
+    if(!['auto',...tracks].includes(settings.track))settings.track='auto'
+    select.value=settings.track
+    function save(){try{localStorage.setItem('bss-audio-settings',JSON.stringify(settings))}catch(e){}}
+    function label(){status.textContent=failed?'Could not load '+failed+'. Check the audio/bss folder.':!unlocked?'Click or press a key to enable audio.':settings.muted?'Audio muted.':'Playing: '+(current||desired);mute.textContent=settings.muted?'Unmute':'Mute'}
+    function volumes(){music.volume=settings.muted?0:settings.music;for(const a of playing)a.volume=settings.muted?0:settings.effects;label()}
+    function resume(){
+        if(!unlocked||settings.muted||settings.music<=0)return
+        if(music.paused){const p=music.play();if(p)p.catch(()=>{status.textContent='Click Unmute or interact with the game to enable music.'})}
+    }
+    function setMusic(name){
+        desired=name
+        const next=settings.track==='auto'?name:settings.track
+        if(!files[next])return
+        if(current!==next){music.pause();current=next;failed='';music.src=files[next];music.currentTime=0}
+        volumes();resume()
+    }
+    music.addEventListener('error',()=>{failed=current;label()})
+    function unlock(){unlocked=true;setMusic(desired)}
+    document.addEventListener('pointerdown',unlock,{capture:true})
+    document.addEventListener('keydown',unlock,{capture:true})
+    for(const event of ['pointerdown','pointerup','click','keydown','keyup','touchstart','touchend'])panel.addEventListener(event,e=>e.stopPropagation())
+    mute.onclick=()=>{settings.muted=!settings.muted;save();volumes();if(settings.muted){music.pause();for(const a of playing)a.pause()}else unlock()}
+    for(const key of ['music','effects']){
+        const input=panel.querySelector('[data-'+key+']');input.value=settings[key]
+        input.oninput=()=>{settings[key]=Number(input.value);save();volumes();if(key==='music'){if(!settings.music)music.pause();else unlock()}}
+    }
+    select.onchange=()=>{settings.track=select.value;save();unlock()}
+    const tokenSounds={haste:'haste',hastePlus:'haste',focus:'focusToken',melody:'melodyToken',babyLove:'babyLove',inspire:'inspireToken',rage:'rageToken',redBoost:'boostToken',blueBoost:'boostToken',whiteBoost:'boostToken',whiteBomb:'bombToken',redBomb:'bombToken',blueBomb:'bombToken',whiteBomb_:'bombToken',redBomb_:'bombToken',blueBomb_:'bombToken',whiteBombPlus:'bombToken',redBombPlus:'bombToken',blueBombPlus:'bombToken',pollenMark:'markToken',honeyMark:'markToken',preciseMark:'markToken',inferno:'infernoToken',flameFuel:'flameFuelToken',summonFrog:'frog',inflateBalloons:'inflateBalloons',surpriseParty:'surpriseParty'}
+    function effect(name,rate=1){
+        if(!unlocked||settings.muted||settings.effects<=0||!files[name])return
+        const now=performance.now()
+        if(now-(lastPlayed[name]??-Infinity)<90||playing.size>=20)return
+        lastPlayed[name]=now
+        const a=new Audio(files[name]);a.volume=settings.effects;a.playbackRate=Math.max(0.5,Math.min(2,rate));playing.add(a)
+        const done=()=>{playing.delete(a);a.removeAttribute('src');a.load()}
+        a.addEventListener('ended',done,{once:true});a.addEventListener('error',done,{once:true})
+        const p=a.play();if(p)p.catch(done)
+    }
+    function choose(p,beesmas,triggers){
+        if(p.roboChallenge)return p.roboChallenge.isPlaying?'digitize':'rbcloading'
+        if(p.antChallenge)return 'antmarch1'
+        if(p.activeStickbug)return 'stickbug'
+        for(const [aura,track] of [['scorchingStarAura','scorchingStar'],['popStarAura','popStar'],['gummyStarAura','gummyStar']]){
+            if(p.effects.some(e=>e.type===aura&&e.cooldown>0))return track
+        }
+        if(p.currentShop)return /dapper/i.test(p.currentShop)?'nectar':/gummy/i.test(p.currentShop)?'gbtune1':'vendor'
+        const pos=p.body.position
+        if(pos.y>900&&pos.z>900)return 'gbtune1'
+        if(pos.y<-50)return 'hibernation'
+        for(const key in triggers){if(/star_amulet_generator$/.test(key)&&triggers[key].colliding)return 'starhall'}
+        if(pos.x>-56&&pos.x<-28&&pos.z>6&&pos.z<27&&pos.y<1)return 'crawlers'
+        if(p.targetLight<1)return 'mountaincall'
+        if(['CoconutField','PepperPatch','PineTreeForest','PumpkinPatch','CactusField','MountainTopField','PineapplePatch','StumpField'].includes(p.fieldIn))return 'overflowin4'
+        if(['RoseField','StrawberryField','SpiderField','BambooField'].includes(p.fieldIn))return 'bpatrol'
+        if(!p.fieldIn&&pos.y>10)return 'overflowin4'
+        if(!p.fieldIn&&pos.y>1.5)return 'bpatrol'
+        return beesmas?'drone':'wax'
+    }
+    window.bssAudio={
+        effect,
+        token(type){const name=tokenSounds[type];if(name)effect(name)},
+        tick(p,beesmas,triggers,time){if(time-lastTick<0.4)return;lastTick=time;setMusic(choose(p,beesmas,triggers))},
+        reset(){lastTick=-Infinity;for(const a of playing){a.pause();a.removeAttribute('src');a.load()}playing.clear();setMusic('wax')},
+        setMusic
+    }
+    setMusic('wax')
+    return window.bssAudio
 }
