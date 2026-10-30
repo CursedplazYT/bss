@@ -10580,7 +10580,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'moveToPlayer':
                     
-                    if(player.fieldIn&&player.pollen<player.capacity){
+                    if(player.fieldIn){
                         
                         if(fieldInfo[player.fieldIn].planter){
 
@@ -10664,7 +10664,7 @@ function BeeSwarmSimulator(DATA){
 
                 case 'moveToPlanter':
                     
-                    if(!player.fieldIn||player.pollen>=player.capacity||!fieldInfo[player.fieldIn].planter){
+                    if(!player.fieldIn||!fieldInfo[player.fieldIn].planter){
                         
                         this.state='moveToPlayer'
                         break
@@ -10737,7 +10737,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'moveToFlower':
                     
-                    if(!player.fieldIn||player.pollen>=player.capacity){
+                    if(!player.fieldIn){
                         
                         this.state='moveToPlayer'
                         break
@@ -23346,7 +23346,7 @@ function BeeSwarmSimulator(DATA){
             bondFromTreats:1,
             nectarMultiplier:1,
             tabbyLoveStacks:1,
-            redFieldCapacity:1,
+            redFieldCapacity:4,
             blueFieldCapacity:1,
             whiteFieldCapacity:1,
             CoconutFieldCapacity:1,
