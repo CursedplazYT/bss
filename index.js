@@ -34873,6 +34873,7 @@ function BeeSwarmSimulator(DATA){
         
         textRenderer.draw()
         
+        updateBssRates(player)
         player.updateUI()
         
         user.update()
@@ -35275,4 +35276,39 @@ function convertFullBagHalf(player){
     player.pollen-=converted
     player.honey+=Math.ceil(converted*player.honeyPerPollen)
     return converted
+}
+
+function updateBssRates(player){
+    const now=performance.now()/1000
+    let state=window.bssRateState
+    if(!state){
+        const panel=document.createElement('div')
+        panel.id='bss-live-rates'
+        panel.style.cssText='position:fixed;bottom:92px;left:12px;z-index:99999;background:#182014d9;color:white;border:1px solid #ffffff66;border-radius:8px;padding:7px 10px;font:13px Arial;pointer-events:none;line-height:1.5'
+        panel.title='Average over the last 5 seconds. Pollen counts gathered pollen, including instant-converted pollen. Honey shows positive changes to your honey balance.'
+        document.body.appendChild(panel)
+        state=window.bssRateState={panel,player,samples:[],start:now,last:now,lastPaint:-Infinity,pollen:player.stats.pollen||0,honey:player.honey,pollenRate:0,honeyRate:0}
+    }
+    const pollen=player.stats.pollen||0,honey=player.honey
+    if(state.player!==player||now-state.last>2||pollen<state.pollen){
+        Object.assign(state,{player,samples:[],start:now,last:now,pollen,honey,pollenRate:0,honeyRate:0})
+    }
+    if(now>state.last){
+        const dp=Math.max(0,pollen-state.pollen),dh=Math.max(0,honey-state.honey)
+        // Quarter-second buckets keep the rolling history small at any frame rate.
+        const bucket=Math.floor(now*4),last=state.samples[state.samples.length-1]
+        if(last&&last.bucket===bucket){last.pollen+=dp;last.honey+=dh}
+        else state.samples.push({bucket,pollen:dp,honey:dh})
+        while(state.samples.length&&state.samples[0].bucket<=bucket-20)state.samples.shift()
+        const duration=Math.max(0.001,Math.min(5,now-state.start))
+        state.pollenRate=state.samples.reduce((n,x)=>n+x.pollen,0)/duration
+        state.honeyRate=state.samples.reduce((n,x)=>n+x.honey,0)/duration
+    }
+    Object.assign(state,{last:now,pollen,honey})
+    if(now-state.lastPaint>=0.25){
+        const format=n=>Math.round(n).toLocaleString('en-US')
+        state.panel.textContent='Pollen/sec: '+format(state.pollenRate)+' | Honey/sec: '+format(state.honeyRate)
+        state.lastPaint=now
+    }
+    return state
 }
