@@ -34635,7 +34635,7 @@ function BeeSwarmSimulator(DATA){
         gl.useProgram(beeGeometryProgram)
         
         gl.uniformMatrix4fv(glCache.bee_viewMatrix,gl.FALSE,player.viewMatrix)
-        convertFullBagHalf(player)
+        convertFullBagDuringStarSaw(player,objects.mobs.some(mob=>mob instanceof StarSaw&&mob.life>0))
         // Keep bees working for 10 seconds after the backpack fills.
         if(!player.fieldIn || player.pollen < player.capacity){
             player.fullBagSince = null
@@ -35268,13 +35268,19 @@ function createBssGraphics(){
     return window.bssGraphics
 }
 
-// Full-bag conversion is a one-shot payout, not a lasting conversion-rate boost.
-function convertFullBagHalf(player){
-    if(!Number.isFinite(player.capacity)||player.capacity<=0||
-       !Number.isFinite(player.pollen)||player.pollen<player.capacity)return 0
-    const converted=player.pollen*0.5
+// One chance per full bag while a live Star Saw exists.
+function convertFullBagDuringStarSaw(player,starSawActive,random=Math.random){
+    if(!Number.isFinite(player.capacity)||player.capacity<=0||!Number.isFinite(player.pollen))return 0
+    if(player.pollen<player.capacity){player.fullBagSawRolled=false;return 0}
+    if(!starSawActive||player.fullBagSawRolled)return 0
+    player.fullBagSawRolled=true
+    if(random()>=0.5)return 0
+    const percent=1+Math.floor(random()*75)
+    const converted=player.pollen*percent/100
     player.pollen-=converted
     player.honey+=Math.ceil(converted*player.honeyPerPollen)
+    // A successful payout drops the bag below full immediately, rearming it.
+    player.fullBagSawRolled=false
     return converted
 }
 
