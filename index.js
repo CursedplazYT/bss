@@ -10691,7 +10691,7 @@ function BeeSwarmSimulator(DATA){
 
                 case 'collectPlanter':
                     
-                    if(!player.fieldIn||player.pollen>=player.capacity||!fieldInfo[player.fieldIn].planter){
+                    if(!player.fieldIn||!fieldInfo[player.fieldIn].planter){
                         
                         this.state='moveToPlayer'
                         return
@@ -10772,7 +10772,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'collectPollen':
                     
-                    if(!player.fieldIn||player.pollen>=player.capacity){
+                    if(!player.fieldIn){
                         
                         this.state='moveToPlayer'
                         return
@@ -11403,7 +11403,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'moveToPlayer':
                     
-                    if(player.fieldIn&&player.pollen<player.capacity){
+                    if(player.fieldIn){
                         
                         this.state='moveToFlower'
                         return
@@ -34544,7 +34544,54 @@ function BeeSwarmSimulator(DATA){
         gl.useProgram(beeGeometryProgram)
         
         gl.uniformMatrix4fv(glCache.bee_viewMatrix,gl.FALSE,player.viewMatrix)
-        
+        // Allow another token burst after the bag drops below 90%.
+        if(player.pollen < player.capacity * 0.9){
+            player.fullBagTokenBurst = false
+        }
+
+        //  Once per full bag: every bee drops one guaranteed token.
+        if(
+            player.fieldIn &&
+            player.flowerIn &&
+            player.pollen >= player.capacity &&
+            !player.fullBagTokenBurst
+        ){
+            player.fullBagTokenBurst = true
+
+            for(let bee of [...objects.bees, ...objects.tempBees]){
+                let choices = bee.gatheringTokens.filter(token =>
+                    (!token.requireGifted || bee.gifted) &&
+                    effects[token.type]
+                )
+
+                // Bees without an available ability give Red Boost.
+                let chosen = choices.length
+                    ? choices[Math.floor(Math.random() * choices.length)]
+                    : null
+
+                let type = chosen ? chosen.type : 'redBoost'
+
+                if(chosen){
+                    chosen.timer = TIME
+                }
+
+                objects.tokens.push(new Token(
+                    effects[type].tokenLife,
+                    [
+                        player.body.position.x + Math.random() * 6 - 3,
+                        fieldInfo[player.fieldIn].y + 1,
+                        player.body.position.z + Math.random() * 6 - 3
+                    ],
+                    type,
+                    {
+                        field: player.fieldIn,
+                        x: player.flowerIn.x,
+                        z: player.flowerIn.z,
+                        bee: bee
+                    }
+                ))
+            }
+        }
         for(let i in objects.bees){
             
             objects.bees[i].update()
