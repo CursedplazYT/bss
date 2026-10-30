@@ -20039,6 +20039,7 @@ function BeeSwarmSimulator(DATA){
         let vshText=hardcodeShaderBeesmasFog(((player.extraInfo.enableLowGraph?window['glsl_'+vsh+'_LOW']:0)||window['glsl_'+vsh]).trim().replaceAll('INV_AVG_HALF_WIDTH_HEIGHT',2/((width+height)*0.5)).replaceAll('INV_HALF_WIDTH',1/(width*0.5)).replaceAll('INV_HALF_HEIGHT',1/(height*0.5)).replaceAll('INV_WIDTH',1/width).replaceAll('INV_HEIGHT',1/height).replaceAll('HALF_WIDTH',width*0.5+0.0000001).replaceAll('HALF_HEIGHT',height*0.5+0.0000001).replaceAll('INV_ASPECT',1/(aspect)+0.00001).replaceAll('ASPECT',aspect+0.000001).replaceAll('SCREEN_CHANGE',(((width+height)*0.5)/600)*1.5+0.00001))
 
         let fshText=hardcodeShaderBeesmasFog(((player.extraInfo.enableLowGraph?window['glsl_'+fsh+'_LOW']:0)||window['glsl_'+fsh]).trim().replaceAll('LIGHT_DIR','vec3('+lightDir[0]+','+lightDir[1]+','+lightDir[2]+')').replaceAll('INV_AVG_HALF_WIDTH_HEIGHT',2/((width+height)*0.5)).replaceAll('INV_HALF_WIDTH',1/(width*0.5)).replaceAll('INV_HALF_HEIGHT',1/(height*0.5)).replaceAll('INV_WIDTH',1/width).replaceAll('INV_HEIGHT',1/height).replaceAll('HALF_WIDTH',width*0.5+0.0000001).replaceAll('HALF_HEIGHT',height*0.5+0.0000001).replaceAll('INV_ASPECT',1/(aspect)+0.00001).replaceAll('ASPECT',aspect+0.00001).replaceAll('SCREEN_CHANGE',(((width+height)*0.5)/600)*1.5+0.00001)).replaceAll('SHADOW_MATRIX',shaMat.join(',')).replaceAll('SHADOW_POS',shaPos.join(','))
+        if(fsh==='text_renderer_fsh')fshText=fshText.replace('uniform sampler2D tex;','uniform sampler2D tex;\nuniform float bssDecalOpacity;').replaceAll(',c.a);',',c.a*bssDecalOpacity);')
 
         let ef='',fc='vec3(1,1,0.7)',fcb='vec3(.96,.96,.96)'
         STORM_SKY_COLOR=0
@@ -23402,7 +23403,7 @@ function BeeSwarmSimulator(DATA){
             bondFromTreats:1,
             nectarMultiplier:1,
             tabbyLoveStacks:1,
-            redFieldCapacity:4,
+            redFieldCapacity:20,
             blueFieldCapacity:1,
             whiteFieldCapacity:1,
             CoconutFieldCapacity:1,
@@ -29060,6 +29061,7 @@ function BeeSwarmSimulator(DATA){
     let textRenderer=(function(out){
         
         out.data=[]
+        out.dupe_decal_instanceData=[]
         out.decals=[]
         
         out.decalUV={
@@ -29291,6 +29293,8 @@ function BeeSwarmSimulator(DATA){
             out.decal_instanceData.push(...pos,0,0,...out.decalUV[type],1,1,1,...size,rot)
         }
         
+        out.addDupeDecalRaw=function(){out.dupe_decal_instanceData.push(...arguments)}
+
         out.addDecalRaw=function(){
             
             out.decal_instanceData.push(...arguments)
@@ -29299,6 +29303,8 @@ function BeeSwarmSimulator(DATA){
         out.render=function(dt,SIN_TIME){
             
             gl.useProgram(textRendererProgram)
+            const decalOpacity=gl.getUniformLocation(textRendererProgram,'bssDecalOpacity')
+            gl.uniform1f(decalOpacity,1)
             gl.uniformMatrix4fv(glCache.text_viewMatrix,gl.FALSE,player.viewMatrix)
 
             gl.bindTexture(gl.TEXTURE_2D,textures.decals)
@@ -29320,6 +29326,16 @@ function BeeSwarmSimulator(DATA){
             gl.vertexAttribPointer(glCache.text_instanceInfo,3,gl.FLOAT,gl.FALSE,52,40)
             gl.vertexAttribDivisor(glCache.text_instanceInfo,1)
             gl.drawElementsInstanced(gl.TRIANGLES,out.decal_indexAmount,gl.UNSIGNED_SHORT,0,out.decal_instanceData.length*MATH.INV_13)
+            if(out.dupe_decal_instanceData.length&&graphics.settings.dupeOpacity>0){
+                gl.bufferData(gl.ARRAY_BUFFER,Float32Array.from(out.dupe_decal_instanceData),gl.DYNAMIC_DRAW)
+                gl.uniform1f(decalOpacity,graphics.settings.dupeOpacity)
+                gl.depthMask(false)
+                gl.drawElementsInstanced(gl.TRIANGLES,out.decal_indexAmount,gl.UNSIGNED_SHORT,0,out.dupe_decal_instanceData.length*MATH.INV_13)
+                gl.depthMask(true)
+                gl.uniform1f(decalOpacity,1)
+            }
+            out.dupe_decal_instanceData=[]
+
 
             let n=player.isNight,o
 
@@ -30338,17 +30354,17 @@ function BeeSwarmSimulator(DATA){
             
             if(this.collected){
                 
-                textRenderer.addDecalRaw(this.pos[0],this.pos[1],this.pos[2],0,0,...textRenderer.decalUV.smiley,1,0,0.85,-3,-3,0)
+                if(graphics.settings.dupeOpacity>0)textRenderer.addDupeDecalRaw(this.pos[0],this.pos[1],this.pos[2],0,0,...textRenderer.decalUV.smiley,1,0,0.85,-3,-3,0)
                 
             } else {
                 
-                textRenderer.addDecalRaw(this.pos[0],this.pos[1],this.pos[2],0,0,...textRenderer.decalUV.circle,0.1,0.1,0.1,3,3,0)
+                if(graphics.settings.dupeOpacity>0)textRenderer.addDupeDecalRaw(this.pos[0],this.pos[1],this.pos[2],0,0,...textRenderer.decalUV.circle,0.1,0.1,0.1,3,3,0)
                 
-                textRenderer.addDecalRaw(this.pos[0],this.pos[1],this.pos[2],0,0,...textRenderer.decalUV.arc,1,1,1,-3,-3,MATH.dupedTokenLoadingArcRotation(this.activationTimer))
+                if(graphics.settings.dupeOpacity>0)textRenderer.addDupeDecalRaw(this.pos[0],this.pos[1],this.pos[2],0,0,...textRenderer.decalUV.arc,1,1,1,-3,-3,MATH.dupedTokenLoadingArcRotation(this.activationTimer))
                 
                 this.rotation+=dt*2.6
                 
-                meshes.tokens.instanceData.push(this.pos[0],this.pos[1],this.pos[2],this.rotation,effects[this.type].u,effects[this.type].v,this.life*0.15,1.5)
+                if(graphics.settings.dupeOpacity>0)meshes.tokens.instanceData.push(this.pos[0],this.pos[1],this.pos[2],this.rotation,effects[this.type].u,effects[this.type].v,Math.min(this.life*0.15,1)*graphics.settings.dupeOpacity,1.5)
                 
                 if(Math.abs(this.pos[0]-player.body.position.x)+Math.abs(this.pos[1]-3.5-player.body.position.y)+Math.abs(this.pos[2]-player.body.position.z)<3.5){
                     
@@ -35201,17 +35217,17 @@ function createBssAudio(){
 
 function createBssGraphics(){
     if(window.bssGraphics)return window.bssGraphics
-    const defaults={flames:1,particles:1,hideSpicyBees:false,explosions:true,trails:true,pollenText:true,showBubbles:true,starOpacity:1,scale:1}
+    const defaults={flames:1,particles:1,hideSpicyBees:false,explosions:true,trails:true,pollenText:true,showBubbles:true,starOpacity:1,dupeOpacity:1,scale:1}
     let settings={...defaults},changed=()=>{},accumulator={flame:0,other:0}
     try{Object.assign(settings,JSON.parse(localStorage.getItem('bss-graphics-settings')||'{}'))}catch(e){}
-    for(const key of ['flames','particles','scale','starOpacity']){
+    for(const key of ['flames','particles','scale','starOpacity','dupeOpacity']){
         const n=Number(settings[key]);settings[key]=Number.isFinite(n)?Math.max(key==='scale'?0.4:0,Math.min(1,n)):defaults[key]
     }
     for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])settings[key]=typeof settings[key]==='boolean'?settings[key]:defaults[key]
     const panel=document.createElement('details')
     panel.id='bss-graphics-controls'
     panel.style.cssText='position:fixed;bottom:56px;right:12px;z-index:100001;background:#edf5ff;color:#18283e;border:2px solid #55739b;border-radius:10px;padding:8px;font:14px Arial;max-width:290px;max-height:70vh;overflow:auto;box-shadow:0 2px 10px #0004;user-select:auto'
-    panel.innerHTML='<summary style="cursor:pointer">Graphics</summary><div style="display:grid;gap:9px;padding-top:10px"><button data-low type="button" style="width:auto;height:auto;padding:6px">Chromebook preset</button><button data-reset type="button" style="width:auto;height:auto;padding:6px">Full graphics</button><label>Flame particles <output data-flames-value></output><input data-flames type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Other particles <output data-particles-value></output><input data-particles type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>SSA star opacity <output data-starOpacity-value></output><input data-starOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Render resolution <output data-scale-value></output><input data-scale type="range" min="0.4" max="1" step="0.05" style="width:100%"></label><label><input data-showBubbles type="checkbox" style="height:auto"> Show bubbles</label><label><input data-hideSpicyBees type="checkbox" style="height:auto"> Hide Spicy Bee summons</label><label><input data-explosions type="checkbox" style="height:auto"> Decorative explosions</label><label><input data-trails type="checkbox" style="height:auto"> Trails</label><label><input data-pollenText type="checkbox" style="height:auto"> Floating pollen numbers</label><small>Hidden bees and flames still work normally. Lower resolution makes the world less sharp; menus stay sharp. Settings save automatically.</small></div>'
+    panel.innerHTML='<summary style="cursor:pointer">Graphics</summary><div style="display:grid;gap:9px;padding-top:10px"><button data-low type="button" style="width:auto;height:auto;padding:6px">Chromebook preset</button><button data-reset type="button" style="width:auto;height:auto;padding:6px">Full graphics</button><label>Flame particles <output data-flames-value></output><input data-flames type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Other particles <output data-particles-value></output><input data-particles type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>SSA star opacity <output data-starOpacity-value></output><input data-starOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Dupe token opacity <output data-dupeOpacity-value></output><input data-dupeOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Render resolution <output data-scale-value></output><input data-scale type="range" min="0.4" max="1" step="0.05" style="width:100%"></label><label><input data-showBubbles type="checkbox" style="height:auto"> Show bubbles</label><label><input data-hideSpicyBees type="checkbox" style="height:auto"> Hide Spicy Bee summons</label><label><input data-explosions type="checkbox" style="height:auto"> Decorative explosions</label><label><input data-trails type="checkbox" style="height:auto"> Trails</label><label><input data-pollenText type="checkbox" style="height:auto"> Floating pollen numbers</label><small>Hidden bees and flames still work normally. Lower resolution makes the world less sharp; menus stay sharp. Settings save automatically.</small></div>'
     document.body.appendChild(panel)
     const audioPanel=document.getElementById('bss-audio-controls')
     if(audioPanel)audioPanel.addEventListener('toggle',()=>{if(audioPanel.open)panel.open=false})
@@ -35219,20 +35235,20 @@ function createBssGraphics(){
     for(const event of ['pointerdown','pointerup','click','keydown','keyup','touchstart','touchend'])panel.addEventListener(event,e=>e.stopPropagation())
     function persist(){try{localStorage.setItem('bss-graphics-settings',JSON.stringify(settings))}catch(e){}}
     function refresh(){
-        for(const key of ['flames','particles','scale','starOpacity']){
+        for(const key of ['flames','particles','scale','starOpacity','dupeOpacity']){
             panel.querySelector('[data-'+key+']').value=settings[key]
             panel.querySelector('[data-'+key+'-value]').textContent=Math.round(settings[key]*100)+'%'
         }
         for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])panel.querySelector('[data-'+key+']').checked=settings[key]
     }
     function commit(){accumulator={flame:0,other:0};persist();changed()}
-    for(const key of ['flames','particles','scale','starOpacity']){
+    for(const key of ['flames','particles','scale','starOpacity','dupeOpacity']){
         const input=panel.querySelector('[data-'+key+']')
         input.oninput=()=>{panel.querySelector('[data-'+key+'-value]').textContent=Math.round(Number(input.value)*100)+'%';if(key!=='scale'){settings[key]=Number(input.value);commit()}}
         input.onchange=()=>{settings[key]=Number(input.value);commit()}
     }
     for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])panel.querySelector('[data-'+key+']').onchange=e=>{settings[key]=e.target.checked;commit()}
-    panel.querySelector('[data-low]').onclick=()=>{Object.assign(settings,{flames:0.1,particles:0.1,hideSpicyBees:true,explosions:false,trails:false,pollenText:false,showBubbles:false,starOpacity:0.35,scale:0.6});refresh();commit()}
+    panel.querySelector('[data-low]').onclick=()=>{Object.assign(settings,{flames:0.1,particles:0.1,hideSpicyBees:true,explosions:false,trails:false,pollenText:false,showBubbles:false,starOpacity:0.35,dupeOpacity:0.35,scale:0.6});refresh();commit()}
     panel.querySelector('[data-reset]').onclick=()=>{Object.assign(settings,defaults);refresh();commit()}
     refresh()
     window.bssGraphics={settings,
