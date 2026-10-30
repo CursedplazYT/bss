@@ -34635,6 +34635,7 @@ function BeeSwarmSimulator(DATA){
         gl.useProgram(beeGeometryProgram)
         
         gl.uniformMatrix4fv(glCache.bee_viewMatrix,gl.FALSE,player.viewMatrix)
+        convertFullBagHalf(player)
         // Keep bees working for 10 seconds after the backpack fills.
         if(!player.fieldIn || player.pollen < player.capacity){
             player.fullBagSince = null
@@ -35264,4 +35265,14 @@ function createBssGraphics(){
         particleLimit(){return Math.round(100+1400*Math.max(settings.flames,settings.particles))}
     }
     return window.bssGraphics
+}
+
+// Full-bag conversion is a one-shot payout, not a lasting conversion-rate boost.
+function convertFullBagHalf(player){
+    if(!Number.isFinite(player.capacity)||player.capacity<=0||
+       !Number.isFinite(player.pollen)||player.pollen<player.capacity)return 0
+    const converted=player.pollen*0.5
+    player.pollen-=converted
+    player.honey+=Math.ceil(converted*player.honeyPerPollen)
+    return converted
 }
