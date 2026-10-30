@@ -34880,6 +34880,7 @@ function createBssAudio(){
         const option=document.createElement('option');option.value=name;option.textContent=name==='auto'?'Automatic':name;select.appendChild(option)
     }
     if(!['auto',...tracks].includes(settings.track))settings.track='auto'
+    if(settings.boundaryVersion!==1){settings.track='auto';settings.boundaryVersion=1}
     select.value=settings.track
     function save(){try{localStorage.setItem('bss-audio-settings',JSON.stringify(settings))}catch(e){}}
     function label(){status.textContent=failed?'Could not load '+failed+'. Check the audio/bss folder.':!unlocked?'Click or press a key to enable audio.':settings.muted?'Audio muted.':'Playing: '+(current||desired);mute.textContent=settings.muted?'Unmute':'Mute'}
@@ -34925,42 +34926,68 @@ function createBssAudio(){
         a.addEventListener('ended',done,{once:true});a.addEventListener('error',done,{once:true})
         const p=a.play();if(p)p.catch(done)
     }
-    function choose(p,beesmas,triggers,fields){
+    // A music area always has finite X, Y and Z bounds.
+    function insideMusicBox(pos,b,padding=0){
+        return pos.x>=b.minX-padding && pos.x<=b.maxX+padding &&
+            pos.z>=b.minZ-padding && pos.z<=b.maxZ+padding &&
+            pos.y>=b.minY && pos.y<=b.maxY
+    }
+    const fieldMusicTracks={
+        SunflowerField:'starter',DandelionField:'starter',MushroomField:'starter',BlueFlowerField:'starter',CloverField:'starter',
+        StrawberryField:'bpatrol',SpiderField:'bpatrol',BambooField:'bpatrol',RoseField:'bpatrol',
+        PineapplePatch:'bpatrol',StumpField:'bpatrol',CactusField:'bpatrol',PumpkinPatch:'bpatrol',PineTreeForest:'bpatrol',MountainTopField:'bpatrol',
+        CoconutField:'overflowin4',PepperPatch:'overflowin4',AntField:'antmarch1'
+    }
+    function fieldMusicArea(pos,fields,padding=0){
+        let best=null,bestFloorDistance=Infinity
+        for(const name in fields){
+            const f=fields[name]
+            if(!fieldMusicTracks[name])continue
+            const bounds={minX:f.x-0.5,maxX:f.x+f.width-0.5,minZ:f.z-0.5,maxZ:f.z+f.length-0.5,minY:f.y-2,maxY:f.y+28}
+            // The field's airspace includes normal jumps and gliding above flowers.
+            if(insideMusicBox(pos,bounds,padding)){
+                const distance=Math.abs(pos.y-f.y)
+                if(distance<bestFloorDistance){best=name;bestFloorDistance=distance}
+            }
+        }
+        return best
+    }
+    function choose(p,beesmas,triggers,fields={}){
+        const pos=p.body.position
+        const starter=beesmas?'drone':'wax'
+        const field=fieldMusicArea(pos,fields)
+        const antBounds={minX:-30,maxX:-11,minZ:-59.5,maxZ:-46.5,minY:3.5,maxY:34}
+        if(p.antChallenge&&insideMusicBox(pos,antBounds))return 'antmarch1'
         if(p.roboChallenge)return p.roboChallenge.isPlaying?'digitize':'rbcloading'
-        if(p.antChallenge)return 'antmarch1'
-        if(p.activeStickbug)return 'stickbug'
+        if(p.activeStickbug&&field===p.activeStickbug.field)return 'stickbug'
         for(const [aura,track] of [['scorchingStarAura','scorchingStar'],['popStarAura','popStar'],['gummyStarAura','gummyStar']]){
             if(p.effects.some(e=>e.type===aura&&e.cooldown>0))return track
         }
-        if(p.currentShop)return /dapper/i.test(p.currentShop)?'nectar':/gummy/i.test(p.currentShop)?'gbtune1':'vendor'
-        const pos=p.body.position
-        if(pos.y>900&&pos.z>900)return 'gbtune1'
-        if(pos.y<-50)return 'hibernation'
-        for(const key in triggers){if(/star_amulet_generator$/.test(key)&&triggers[key].colliding)return 'starhall'}
-        if(pos.x>-56&&pos.x<-28&&pos.z>6&&pos.z<27&&pos.y<1)return 'crawlers'
+        // Physical building bounds, not whether a shop window was last opened.
+        if(insideMusicBox(pos,{minX:-8,maxX:8,minY:997,maxY:1013,minZ:979,maxZ:1021}))return 'gbtune1'
+        const shopTracks={noob:'vendor',pro:'vendor',top:'vendor',blueHQ:'vendor',redHQ:'vendor',ace:'vendor',petal:'vendor',planter:'nectar',beequip:'nectar',lair:'gbtune1',coconutCave:'vendor',sprinkler:'vendor'}
+        for(const name in shopTracks){
+            const bounds=triggers[name+'_shop']
+            if(bounds&&insideMusicBox(pos,bounds))return shopTracks[name]
+        }
+        // Star Hall is rotated 45.6 degrees in this map.
+        const angle=45.6*Math.PI/180,dx=pos.x+35.5,dz=pos.z+2.75
+        const along=-(dx*Math.cos(angle)+dz*Math.sin(angle))
+        const across=dx*Math.sin(angle)-dz*Math.cos(angle)
+        if(along>=0&&along<=46&&across>=-7&&across<=10&&pos.y>=10&&pos.y<=29)return 'starhall'
+        const caveAreas=[
+            {minX:-55,maxX:-30,minY:-10,maxY:3.5,minZ:6.5,maxZ:26.5},
+            {minX:-50,maxX:10,minY:-27,maxY:-17,minZ:40,maxZ:50}
+        ]
+        if(caveAreas.some(bounds=>insideMusicBox(pos,bounds)))return 'crawlers'
+        // Nighttime and active stars intentionally override normal area music.
         if(p.targetLight<1)return 'mountaincall'
-        const fieldTracks={
-            SunflowerField:'starter',DandelionField:'starter',MushroomField:'starter',BlueFlowerField:'starter',CloverField:'starter',
-            StrawberryField:'bpatrol',SpiderField:'bpatrol',BambooField:'bpatrol',RoseField:'bpatrol',
-            PineapplePatch:'bpatrol',StumpField:'bpatrol',CactusField:'bpatrol',PumpkinPatch:'bpatrol',PineTreeForest:'bpatrol',MountainTopField:'bpatrol',
-            CoconutField:'overflowin4',PepperPatch:'overflowin4',AntField:'antmarch1'
-        }
-        // Ground bounds remain stable while jumping above the flowers.
-        let field=p.fieldIn
-        if(!field&&fields){
-            let closest=Infinity
-            for(const name in fields){
-                const f=fields[name],dy=Math.abs(pos.y-f.y)
-                if(pos.x>=f.x-0.5&&pos.x<f.x+f.width-0.5&&pos.z>=f.z-0.5&&pos.z<f.z+f.length-0.5&&dy<15&&dy<closest){field=name;closest=dy}
-            }
-        }
-        const track=fieldTracks[field]
-        if(track)return track==='starter'?(beesmas?'drone':'wax'):track
-        // Match map areas rather than player height (jumping is not a music zone).
-        if(pos.z < -18 && pos.x > 20)return 'overflowin4'
-        if(pos.z > 44 || (pos.x > 25 && pos.z > 29))return 'bpatrol'
-        return beesmas?'drone':'wax'
+        // Ignore p.fieldIn: gathering can lose its field flag in mid-jump.
+        const area=field||fieldMusicArea(pos,fields,2)
+        const track=fieldMusicTracks[area]
+        return track==='starter'?starter:(track||starter)
     }
+
     window.bssAudio={
         effect,
         token(type){const name=tokenSounds[type];if(name)effect(name)},
