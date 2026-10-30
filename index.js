@@ -11920,7 +11920,7 @@ function BeeSwarmSimulator(DATA){
             this.golden=true
             this.col=[0.875*0.85,0.85*0.85,0.1*0.85]
             
-            for(let i=0;i<10;i++){
+            for(let i=0;graphics.settings.showBubbles&&i<10;i++){
                 
                 ParticleRenderer.add({x:this.pos[0],y:this.pos[1],z:this.pos[2],vx:MATH.random(-2,2),vy:MATH.random(0,2),vz:MATH.random(-2,2),grav:0,size:MATH.random(30,100),col:[1,1,0],life:1.75,rotVel:MATH.random(-3,3),alpha:3})
             }
@@ -11953,7 +11953,7 @@ function BeeSwarmSimulator(DATA){
                 }
             }
             
-            objects.explosions.push(new Explosion({col:this.col,pos:this.pos.slice(),life:0.2,size:4,speed:0.5,aftershock:0.05}))
+            if(graphics.settings.showBubbles)objects.explosions.push(new Explosion({col:this.col,pos:this.pos.slice(),life:0.2,size:4,speed:0.5,aftershock:0.05}))
             let g=this.golden?1.5*player.bubblePollen:player.bubblePollen
             let p=collectPollen({x:this.x,z:this.z,pattern:[[0,0],[-1,-1],[-1,0],[-1,1],[1,-1],[1,0],[1,1],[0,1],[0,-1],[-2,0],[2,0],[0,2],[0,-2],[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[-1,2],[1,-2],[-1,-2],[3,0],[-3,0],[0,-3],[0,3],[3,1],[3,-1],[1,3],[-1,3],[-1,-3],[1,-3],[-3,1],[-3,-1]],amount:{r:2,w:6,b:10},stackHeight:0.45+Math.random()*0.5,replenish:1,field:this.field,multiplier:g*player.bubbleBonus})
             
@@ -11974,7 +11974,7 @@ function BeeSwarmSimulator(DATA){
                 this.pop()
             }
             
-            meshes.explosions.instanceData.push(this.pos[0],this.pos[1]+0.3,this.pos[2],this.col[0]*player.isNight,this.col[1]*player.isNight,this.col[2]*player.isNight,Math.min(this.life*0.35,this.golden?0.8:0.7),Math.min((TIME-this.birth)*15,3),1)
+            if(graphics.settings.showBubbles)meshes.explosions.instanceData.push(this.pos[0],this.pos[1]+0.3,this.pos[2],this.col[0]*player.isNight,this.col[1]*player.isNight,this.col[2]*player.isNight,Math.min(this.life*0.35,this.golden?0.8:0.7),Math.min((TIME-this.birth)*15,3),1)
             
             return this.life<=0
         }
@@ -16774,6 +16774,16 @@ function BeeSwarmSimulator(DATA){
         return m instanceof ScorchingStar?'scorchingStar':m instanceof PopStar?'popStar':m instanceof GummyStar?'gummyStar':''
     }
 
+    function setStarAppearance(size,alpha){
+        gl.uniform2f(glCache.mob_instanceInfo2,size,alpha*graphics.settings.starOpacity)
+    }
+    function drawSsaStar(mesh){
+        if(graphics.settings.starOpacity<=0)return
+        gl.depthMask(false)
+        gl.drawElements(gl.TRIANGLES,mesh.indexAmount,gl.UNSIGNED_SHORT,0)
+        gl.depthMask(true)
+    }
+
     class PopStar {
         
         constructor(pos){
@@ -16843,7 +16853,7 @@ function BeeSwarmSimulator(DATA){
 
                 vec3.lerp(a,a,p,dt*7+0.075)
 
-                meshes.explosions.instanceData.push(a[0],a[1],a[2],1,1,1,1,0.5,1)
+                meshes.explosions.instanceData.push(a[0],a[1],a[2],1,1,1,graphics.settings.starOpacity,0.5,1)
 
                 if(Math.abs(a[0]-p[0])+Math.abs(a[1]-p[1])+Math.abs(a[2]-p[2])<1.75){
 
@@ -16852,8 +16862,8 @@ function BeeSwarmSimulator(DATA){
             }
 
             gl.uniform4fv(glCache.mob_instanceInfo1,p)
-            gl.uniform2f(glCache.mob_instanceInfo2,this.size,0.7)
-            gl.drawElements(gl.TRIANGLES,meshes.popStar.indexAmount,gl.UNSIGNED_SHORT,0)
+            setStarAppearance(this.size,0.7)
+            drawSsaStar(meshes.popStar)
             
             p[0]+=player.cameraDir[0]
             p[1]+=player.cameraDir[1]
@@ -16920,13 +16930,13 @@ function BeeSwarmSimulator(DATA){
             
             if(this.particleTimer<0){
                 
-                ParticleRenderer.add({x:p[0]+MATH.random(-this.size,this.size),y:p[1]+MATH.random(-this.size,this.size),z:p[2]+MATH.random(-this.size,this.size),vx:0,vy:0,vz:0,grav:0,size:80,col:[1,Math.random()*0.3+0.6,0],life:1,rotVel:0,alpha:2,rot:MATH.HALF_PI})
+                ParticleRenderer.add({graphicsStar:true,x:p[0]+MATH.random(-this.size,this.size),y:p[1]+MATH.random(-this.size,this.size),z:p[2]+MATH.random(-this.size,this.size),vx:0,vy:0,vz:0,grav:0,size:80,col:[1,Math.random()*0.3+0.6,0],life:1,rotVel:0,alpha:2,rot:MATH.HALF_PI})
                 this.particleTimer=0.1
             }
             
             gl.uniform4fv(glCache.mob_instanceInfo1,p)
-            gl.uniform2f(glCache.mob_instanceInfo2,this.size,1)
-            gl.drawElements(gl.TRIANGLES,meshes.scorchingStar.indexAmount,gl.UNSIGNED_SHORT,0)
+            setStarAppearance(this.size,1)
+            drawSsaStar(meshes.scorchingStar)
             
             p[0]+=player.cameraDir[0]*this.size
             p[1]+=player.cameraDir[1]*this.size
@@ -17001,8 +17011,8 @@ function BeeSwarmSimulator(DATA){
             let p=[player.body.position.x+dir[0],player.body.position.y+this.size*2+Math.sin(TIME*3)*this.size-0.5,player.body.position.z+dir[2],-player.playerAngle+Math.PI]
             
             gl.uniform4fv(glCache.mob_instanceInfo1,p)
-            gl.uniform2f(glCache.mob_instanceInfo2,this.size,0.9)
-            gl.drawElements(gl.TRIANGLES,meshes.gummyStar.indexAmount,gl.UNSIGNED_SHORT,0)
+            setStarAppearance(this.size,0.9)
+            drawSsaStar(meshes.gummyStar)
             
             p[0]+=player.cameraDir[0]
             p[1]+=player.cameraDir[1]
@@ -17050,8 +17060,8 @@ function BeeSwarmSimulator(DATA){
             let p=[player.body.position.x+dx,player.body.position.y+0.1,player.body.position.z+dz,TIME*10]
             
             gl.uniform4fv(glCache.mob_instanceInfo1,p)
-            gl.uniform2f(glCache.mob_instanceInfo2,0.65,1)
-            gl.drawElements(gl.TRIANGLES,meshes.starSaw.indexAmount,gl.UNSIGNED_SHORT,0)
+            setStarAppearance(0.65,1)
+            drawSsaStar(meshes.starSaw)
             
             for(let i in objects.bubbles){
                 
@@ -17157,8 +17167,8 @@ function BeeSwarmSimulator(DATA){
             let p=[this.center[0]+st,this.center[1],this.center[2]+ct,TIME*2]
             
             gl.uniform4fv(glCache.mob_instanceInfo1,p)
-            gl.uniform2f(glCache.mob_instanceInfo2,1.5,0.4)
-            gl.drawElements(gl.TRIANGLES,meshes.guidingStar.indexAmount,gl.UNSIGNED_SHORT,0)
+            setStarAppearance(1.5,0.4)
+            drawSsaStar(meshes.guidingStar)
             
             this.particleTimer-=dt
             
@@ -17166,10 +17176,10 @@ function BeeSwarmSimulator(DATA){
                 
                 if(Math.random()<0.25)
                     
-                    ParticleRenderer.add({x:p[0]+MATH.random(-2,2),y:p[1]+MATH.random(-0.5,0.5),z:p[2]+MATH.random(-2,2),vx:MATH.random(-0.1,0.1),vy:0,vz:MATH.random(-0.1,0.1),grav:1,size:30,col:[1,0.8,0],life:1.5,rotVel:MATH.random(-3,3),alpha:0.25})
+                    ParticleRenderer.add({graphicsStar:true,x:p[0]+MATH.random(-2,2),y:p[1]+MATH.random(-0.5,0.5),z:p[2]+MATH.random(-2,2),vx:MATH.random(-0.1,0.1),vy:0,vz:MATH.random(-0.1,0.1),grav:1,size:30,col:[1,0.8,0],life:1.5,rotVel:MATH.random(-3,3),alpha:0.25})
                 
                 else
-                    ParticleRenderer.add({x:fieldInfo[this.field].x+Math.random()*fieldInfo[this.field].width,y:fieldInfo[this.field].y+3,z:fieldInfo[this.field].z+Math.random()*fieldInfo[this.field].length,vx:MATH.random(-0.1,0.1),vy:0,vz:MATH.random(-0.1,0.1),grav:1,size:60,col:[1,0.8,0],life:1.5,rotVel:MATH.random(-3,3),alpha:0.5})
+                    ParticleRenderer.add({graphicsStar:true,x:fieldInfo[this.field].x+Math.random()*fieldInfo[this.field].width,y:fieldInfo[this.field].y+3,z:fieldInfo[this.field].z+Math.random()*fieldInfo[this.field].length,vx:MATH.random(-0.1,0.1),vy:0,vz:MATH.random(-0.1,0.1),grav:1,size:60,col:[1,0.8,0],life:1.5,rotVel:MATH.random(-3,3),alpha:0.5})
                 
                 this.particleTimer=0.2
             }
@@ -17220,8 +17230,8 @@ function BeeSwarmSimulator(DATA){
             gl.vertexAttribPointer(glCache.mob_vertColor,3,gl.FLOAT,gl.FLASE,24,12)
             
             gl.uniform4fv(glCache.mob_instanceInfo1,this.pos)
-            gl.uniform2f(glCache.mob_instanceInfo2,Math.min((this.life)*3,1)*1.5,Math.min((3-this.life)*0.5,1))
-            gl.drawElements(gl.TRIANGLES,meshes.levitatingStarShower.indexAmount,gl.UNSIGNED_SHORT,0)
+            setStarAppearance(Math.min((this.life)*3,1)*1.5,Math.min((3-this.life)*0.5,1))
+            drawSsaStar(meshes.levitatingStarShower)
             
             return this.life<=0
         }
@@ -17322,8 +17332,8 @@ function BeeSwarmSimulator(DATA){
                 gl.vertexAttribPointer(glCache.mob_vertColor,3,gl.FLOAT,gl.FLASE,24,12)
                 
                 gl.uniform4fv(glCache.mob_instanceInfo1,this.pos)
-                gl.uniform2f(glCache.mob_instanceInfo2,0.8,1)
-                gl.drawElements(gl.TRIANGLES,meshes.fallingStar.indexAmount,gl.UNSIGNED_SHORT,0)
+                setStarAppearance(0.8,1)
+                drawSsaStar(meshes.fallingStar)
             }
             
             return this.life<=0
@@ -19408,11 +19418,23 @@ function BeeSwarmSimulator(DATA){
         }
     }
 
+    function choosePuffDestination(field,candidates){
+        const favored=['StrawberryField','RoseField','PumpkinPatch','CactusField','PineTreeForest']
+        if(favored.includes(field)){
+            const same=candidates.find(c=>c[0]===field)
+            if(same&&Math.random()<0.8)return same
+            const others=candidates.filter(c=>c[0]!==field)
+            if(others.length)return others[Math.floor(Math.random()*others.length)]
+            return same||candidates[0]
+        }
+        return candidates[Math.floor(Math.random()*candidates.length)]
+    }
+
     class Puffshroom {
         
         constructor(field,x,z,life,level,type,prevFields){
             
-            this.prevFields=prevFields||[]
+            this.prevFields=(prevFields||[]).slice()
             this.prevFields.push(field)
 
             this.type=type
@@ -19593,15 +19615,15 @@ function BeeSwarmSimulator(DATA){
                         }
                     }
 
-                    _f=_f[(Math.random()*_f.length)|0]
+                    _f=choosePuffDestination(this.field,_f)
 
                     let lvl=this.level,rep=this.prevFields.slice(this.prevFields.length-6).indexOf(_f[0]),type=10,types=(('puffshroom,'.repeat(6))+('rarePuffshroom,'.repeat(8))+('epicPuffshroom,'.repeat(7))+('legendaryPuffshroom,'.repeat(6))+('mythicPuffshroom,'.repeat(5))).split(',')
 
                     types.pop()
 
-                    if(rep<0){
+                    if(_f[0]===this.field||rep<0){
 
-                        lvl+=MATH.random(0.75,3)|0
+                        lvl+=_f[0]===this.field?(Math.random()<0.35?2:1):(MATH.random(0.75,3)|0)
                         type-=MATH.random(2,6)
 
                     } else {
@@ -19610,6 +19632,7 @@ function BeeSwarmSimulator(DATA){
                         type+=3
                     }
 
+                    lvl=Math.max(1,lvl)
                     type-=lvl*0.7
                     type=types[Math.pow(Math.random(),Math.max(type,2))*types.length|0]
 
@@ -19665,7 +19688,7 @@ function BeeSwarmSimulator(DATA){
             
             this.type=type
             this.plife=plife
-            this.prevFields=prevFields
+            this.prevFields=(prevFields||[]).slice()
             this.field=field
             this.x=x
             this.z=z
@@ -19682,7 +19705,7 @@ function BeeSwarmSimulator(DATA){
         
         die(index){
 
-            objects.mobs.push(new Puffshroom(this.field,this.x,this.z,this.plife,this.level,this.type))
+            objects.mobs.push(new Puffshroom(this.field,this.x,this.z,this.plife,this.level,this.type,this.prevFields))
             
             objects.explosions.push(new Explosion({col:[0.6,0.5,0.1],pos:[this.endPos[0],this.endPos[1]+(((this.level-1)*0.125+1)*1.75+0.25)*0.5,this.endPos[2]],life:1,size:this.displayScale*2,speed:0.2,aftershock:0.05}))
 
@@ -29466,6 +29489,7 @@ function BeeSwarmSimulator(DATA){
         out.verts=[]
         
         out.add=function(params){
+            if(params.graphicsStar&&graphics.settings.starOpacity<=0)return
             if(!graphics.allowParticle(!!params.graphicsFlame)||out.particles.length>=graphics.particleLimit())return
             
             params.rot=params.rot!==undefined?params.rot:Math.random()*MATH.TWO_PI
@@ -29488,7 +29512,7 @@ function BeeSwarmSimulator(DATA){
                 d.z+=d.vz*dt
                 d.rot+=d.rotVel*dt
                 d.life-=dt
-                d.col[3]=d.life*d.alpha/d.lifespan
+                d.col[3]=d.life*d.alpha/d.lifespan*(d.graphicsStar?graphics.settings.starOpacity:1)
                 
                 
                 out.verts.push(d.x,d.y,d.z,d.col[0],d.col[1],d.col[2],d.col[3],d.size*graphics.settings.scale,d.rot)
@@ -34915,6 +34939,8 @@ function createBssAudio(){
     starMusic.loop=true
     let currentStar='',hallLatched=false,sessionReady=false
     let unlocked=false,current='',desired='wax',failed='',lastTick=-Infinity
+    const gains={music:1,star:0},fades={}
+    let fadeFrame=0,pendingMusic='',musicPhase='',starWaiting=false
     const panel=document.createElement('details')
     panel.id='bss-audio-controls'
     panel.style.cssText='position:fixed;bottom:12px;right:12px;z-index:100000;background:#fff4cb;color:#302508;border:2px solid #b58a15;border-radius:10px;padding:8px;font:14px Arial;max-width:260px;box-shadow:0 2px 10px #0004;user-select:auto'
@@ -34936,27 +34962,87 @@ function createBssAudio(){
         if(settings.muted)return 0
         return Math.min(1,settings.music*(['wax','drone'].includes(current)?1.30:1))
     }
-    function volumes(){music.volume=musicVolume();starMusic.volume=settings.muted?0:settings.stars;for(const a of playing)a.volume=settings.muted?0:Math.min(1,settings.effects*a.bssGain);label()}
+    function volumes(){music.volume=musicVolume()*gains.music;starMusic.volume=settings.muted?0:settings.stars*gains.star;for(const a of playing)a.volume=settings.muted?0:Math.min(1,settings.effects*a.bssGain);label()}
 
-    function playChannel(channel){
-        if(!unlocked||settings.muted||!channel.src||channel.volume<=0)return
+    function animateMixer(now){
+        fadeFrame=0
+        const completed=[]
+        for(const kind of Object.keys(fades)){
+            const f=fades[kind],t=Math.max(0,Math.min(1,(now-f.start)/f.duration))
+            const eased=t*t*(3-2*t)
+            gains[kind]=f.from+(f.to-f.from)*eased
+            if(t>=1){delete fades[kind];if(f.done)completed.push(f.done)}
+        }
+        volumes()
+        for(const done of completed)done()
+        if(!fadeFrame&&Object.keys(fades).length)fadeFrame=window.requestAnimationFrame(animateMixer)
+    }
+    function ramp(kind,to,seconds,done){
+        fades[kind]={from:gains[kind],to,start:performance.now(),duration:seconds*1000,done}
+        if(!fadeFrame)fadeFrame=window.requestAnimationFrame(animateMixer)
+    }
+    function playChannel(channel,allowSilent=false){
+        if(!unlocked||settings.muted||!channel.src||(!allowSilent&&channel.volume<=0))return
         if(channel.paused){const result=channel.play();if(result)result.catch(()=>{})}
     }
-    function resume(){playChannel(music);if(currentStar)playChannel(starMusic)}
+    function resume(){
+        playChannel(music,musicPhase==='waiting'&&musicVolume()>0)
+        if(currentStar)playChannel(starMusic,starWaiting&&settings.stars>0)
+    }
+    music.addEventListener('playing',()=>{
+        if(musicPhase==='waiting'){
+            musicPhase='in'
+            ramp('music',1,0.7,()=>{if(musicPhase==='in')musicPhase=''})
+        }
+    })
+    starMusic.addEventListener('playing',()=>{
+        if(starWaiting&&currentStar){starWaiting=false;ramp('star',1,0.65)}
+    })
     function setStar(name){
         if(!starTracks.has(name)||!files[name])name=''
         if(name!==currentStar){
-            starMusic.pause();currentStar=name
-            if(name){starMusic.src=files[name];starMusic.currentTime=0}
-            else{starMusic.removeAttribute('src');starMusic.load()}
+            delete fades.star
+            currentStar=name
+            if(name){
+                starMusic.pause();gains.star=0;starWaiting=true
+                starMusic.src=files[name];starMusic.currentTime=0
+            } else {
+                starWaiting=false
+                ramp('star',0,0.45,()=>{
+                    if(!currentStar){starMusic.pause();starMusic.removeAttribute('src');starMusic.load()}
+                })
+            }
         }
+        volumes();resume()
+    }
+    function loadMusic(name,fadeIn){
+        music.pause();current=name;failed='';delete fades.music
+        musicPhase=fadeIn?'waiting':'';gains.music=fadeIn?0:1
+        music.src=files[name];music.currentTime=0
         volumes();resume()
     }
     function setMusic(name){
         desired=name
         const next=settings.track==='auto'?name:settings.track
         if(!files[next])return
-        if(current!==next){music.pause();current=next;failed='';music.src=files[next];music.currentTime=0}
+        pendingMusic=next
+        if(!unlocked||!music.src){
+            if(current!==next)loadMusic(next,false)
+            else{volumes();resume()}
+            return
+        }
+        if(current===next){
+            if(musicPhase==='out'){
+                musicPhase='in'
+                ramp('music',1,0.5,()=>{if(musicPhase==='in')musicPhase=''})
+            }
+            volumes();resume();return
+        }
+        // Keep the latest destination during a fade, without repeatedly restarting it.
+        if(musicPhase!=='out'){
+            musicPhase='out'
+            ramp('music',0,0.4,()=>loadMusic(pendingMusic,true))
+        }
         volumes();resume()
     }
     music.addEventListener('error',()=>{failed=current;label()})
@@ -35042,7 +35128,26 @@ function createBssAudio(){
         // Ignore p.fieldIn: gathering can lose its field flag in mid-jump.
         const area=field||fieldMusicArea(pos,fields,2)
         const track=fieldMusicTracks[area]
-        return track==='starter'?starter:(track||starter)
+        if(track)return track==='starter'?starter:track
+        const platformZones=[
+            // 15-bee plateau including paths between Cactus, Pumpkin and Pine.
+            {minX:0,maxX:60,minZ:61,maxZ:100,minY:9,maxY:44,track:'bpatrol'},
+            // Pineapple/Stump platform, Dapper Bear paths and Pro Shop exterior.
+            {minX:-112,maxX:-36,minZ:71,maxZ:125,minY:8,maxY:44,track:'bpatrol'},
+            // Strawberry/Spider/Bamboo and Rose platforms and connecting paths.
+            {minX:-59,maxX:28,minZ:43,maxZ:63,minY:0,maxY:30,track:'bpatrol'},
+            {minX:26,maxX:58,minZ:29,maxZ:46,minY:0,maxY:30,track:'bpatrol'},
+            // Ace/Robo shop approaches, bounded to this side of the map.
+            {minX:49,maxX:77,minZ:43,maxZ:76,minY:8,maxY:39,track:'bpatrol'},
+            // Mountain Top platform and Onett's upper platform.
+            {minX:-41,maxX:1,minZ:59,maxZ:99,minY:28,maxY:62,track:'bpatrol'},
+            {minX:-40,maxX:1,minZ:100,maxZ:140,minY:28,maxY:70,track:'overflowin4'},
+            // Coconut/Pepper/Wind Shrine platforms and their bounded approaches.
+            {minX:19,maxX:80,minZ:-52,maxZ:-13,minY:10,maxY:53,track:'overflowin4'},
+            {minX:0,maxX:56,minZ:-51,maxZ:-23,minY:10,maxY:43,track:'overflowin4'}
+        ]
+        for(const zone of platformZones)if(insideMusicBox(pos,zone))return zone.track
+        return starter
     }
 
     window.bssAudio={
@@ -35062,17 +35167,17 @@ function createBssAudio(){
 
 function createBssGraphics(){
     if(window.bssGraphics)return window.bssGraphics
-    const defaults={flames:1,particles:1,hideSpicyBees:false,explosions:true,trails:true,pollenText:true,scale:1}
+    const defaults={flames:1,particles:1,hideSpicyBees:false,explosions:true,trails:true,pollenText:true,showBubbles:true,starOpacity:1,scale:1}
     let settings={...defaults},changed=()=>{},accumulator={flame:0,other:0}
     try{Object.assign(settings,JSON.parse(localStorage.getItem('bss-graphics-settings')||'{}'))}catch(e){}
-    for(const key of ['flames','particles','scale']){
+    for(const key of ['flames','particles','scale','starOpacity']){
         const n=Number(settings[key]);settings[key]=Number.isFinite(n)?Math.max(key==='scale'?0.4:0,Math.min(1,n)):defaults[key]
     }
-    for(const key of ['hideSpicyBees','explosions','trails','pollenText'])settings[key]=typeof settings[key]==='boolean'?settings[key]:defaults[key]
+    for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])settings[key]=typeof settings[key]==='boolean'?settings[key]:defaults[key]
     const panel=document.createElement('details')
     panel.id='bss-graphics-controls'
     panel.style.cssText='position:fixed;bottom:56px;right:12px;z-index:100001;background:#edf5ff;color:#18283e;border:2px solid #55739b;border-radius:10px;padding:8px;font:14px Arial;max-width:290px;max-height:70vh;overflow:auto;box-shadow:0 2px 10px #0004;user-select:auto'
-    panel.innerHTML='<summary style="cursor:pointer">Graphics</summary><div style="display:grid;gap:9px;padding-top:10px"><button data-low type="button" style="width:auto;height:auto;padding:6px">Chromebook preset</button><button data-reset type="button" style="width:auto;height:auto;padding:6px">Full graphics</button><label>Flame particles <output data-flames-value></output><input data-flames type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Other particles <output data-particles-value></output><input data-particles type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Render resolution <output data-scale-value></output><input data-scale type="range" min="0.4" max="1" step="0.05" style="width:100%"></label><label><input data-hideSpicyBees type="checkbox" style="height:auto"> Hide Spicy Bee summons</label><label><input data-explosions type="checkbox" style="height:auto"> Decorative explosions</label><label><input data-trails type="checkbox" style="height:auto"> Trails</label><label><input data-pollenText type="checkbox" style="height:auto"> Floating pollen numbers</label><small>Hidden bees and flames still work normally. Lower resolution makes the world less sharp; menus stay sharp. Settings save automatically.</small></div>'
+    panel.innerHTML='<summary style="cursor:pointer">Graphics</summary><div style="display:grid;gap:9px;padding-top:10px"><button data-low type="button" style="width:auto;height:auto;padding:6px">Chromebook preset</button><button data-reset type="button" style="width:auto;height:auto;padding:6px">Full graphics</button><label>Flame particles <output data-flames-value></output><input data-flames type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Other particles <output data-particles-value></output><input data-particles type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>SSA star opacity <output data-starOpacity-value></output><input data-starOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Render resolution <output data-scale-value></output><input data-scale type="range" min="0.4" max="1" step="0.05" style="width:100%"></label><label><input data-showBubbles type="checkbox" style="height:auto"> Show bubbles</label><label><input data-hideSpicyBees type="checkbox" style="height:auto"> Hide Spicy Bee summons</label><label><input data-explosions type="checkbox" style="height:auto"> Decorative explosions</label><label><input data-trails type="checkbox" style="height:auto"> Trails</label><label><input data-pollenText type="checkbox" style="height:auto"> Floating pollen numbers</label><small>Hidden bees and flames still work normally. Lower resolution makes the world less sharp; menus stay sharp. Settings save automatically.</small></div>'
     document.body.appendChild(panel)
     const audioPanel=document.getElementById('bss-audio-controls')
     if(audioPanel)audioPanel.addEventListener('toggle',()=>{if(audioPanel.open)panel.open=false})
@@ -35080,20 +35185,20 @@ function createBssGraphics(){
     for(const event of ['pointerdown','pointerup','click','keydown','keyup','touchstart','touchend'])panel.addEventListener(event,e=>e.stopPropagation())
     function persist(){try{localStorage.setItem('bss-graphics-settings',JSON.stringify(settings))}catch(e){}}
     function refresh(){
-        for(const key of ['flames','particles','scale']){
+        for(const key of ['flames','particles','scale','starOpacity']){
             panel.querySelector('[data-'+key+']').value=settings[key]
             panel.querySelector('[data-'+key+'-value]').textContent=Math.round(settings[key]*100)+'%'
         }
-        for(const key of ['hideSpicyBees','explosions','trails','pollenText'])panel.querySelector('[data-'+key+']').checked=settings[key]
+        for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])panel.querySelector('[data-'+key+']').checked=settings[key]
     }
     function commit(){accumulator={flame:0,other:0};persist();changed()}
-    for(const key of ['flames','particles','scale']){
+    for(const key of ['flames','particles','scale','starOpacity']){
         const input=panel.querySelector('[data-'+key+']')
         input.oninput=()=>{panel.querySelector('[data-'+key+'-value]').textContent=Math.round(Number(input.value)*100)+'%';if(key!=='scale'){settings[key]=Number(input.value);commit()}}
         input.onchange=()=>{settings[key]=Number(input.value);commit()}
     }
-    for(const key of ['hideSpicyBees','explosions','trails','pollenText'])panel.querySelector('[data-'+key+']').onchange=e=>{settings[key]=e.target.checked;commit()}
-    panel.querySelector('[data-low]').onclick=()=>{Object.assign(settings,{flames:0.1,particles:0.1,hideSpicyBees:true,explosions:false,trails:false,pollenText:false,scale:0.6});refresh();commit()}
+    for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])panel.querySelector('[data-'+key+']').onchange=e=>{settings[key]=e.target.checked;commit()}
+    panel.querySelector('[data-low]').onclick=()=>{Object.assign(settings,{flames:0.1,particles:0.1,hideSpicyBees:true,explosions:false,trails:false,pollenText:false,showBubbles:false,starOpacity:0.35,scale:0.6});refresh();commit()}
     panel.querySelector('[data-reset]').onclick=()=>{Object.assign(settings,defaults);refresh();commit()}
     refresh()
     window.bssGraphics={settings,
