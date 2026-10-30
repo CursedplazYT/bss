@@ -5100,7 +5100,7 @@ function BeeSwarmSimulator(DATA){
                             
                             type=type[(Math.random()*type.length)|0]
                             
-                            objects.tokens.push(new Token(effects[type].tokenLife,[b.pos[0],Math.round(params.bee.pos)+0.5,b.pos[2]],type,{field:b.field,x:b.x,z:b.z,bee:params.bee}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects[type].tokenLife,[b.pos[0],Math.round(params.bee.pos)+0.5,b.pos[2]],type,{field:b.field,x:b.x,z:b.z,bee:params.bee}))
                             objects.explosions.push(new ReverseExplosion({col:[0,1,0.4],pos:b.pos,life:0.75,size:b.displaySize+1,alpha:0.9,height:1,primitive:'explosions',transformHeight:true}))
                         }
                     }
@@ -10578,7 +10578,7 @@ function BeeSwarmSimulator(DATA){
                             
                             token=this.attackTokens[token].type
                             
-                            objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),(player.beeWorkPosition||player.body.position).y+0.5,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this},true))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),(player.beeWorkPosition||player.body.position).y+0.5,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this},true))
                             
                         }
                     }
@@ -10733,7 +10733,7 @@ function BeeSwarmSimulator(DATA){
                             
                             token=this.gatheringTokens[token].type
                             
-                            objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),fieldInfo[player.fieldIn].y+1,Math.round(this.pos[2])],token,{field:player.fieldIn,x:fieldInfo[player.fieldIn].x|0,z:fieldInfo[player.fieldIn].z|0,bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),fieldInfo[player.fieldIn].y+1,Math.round(this.pos[2])],token,{field:player.fieldIn,x:fieldInfo[player.fieldIn].x|0,z:fieldInfo[player.fieldIn].z|0,bee:this}))
                             
                         }
                         
@@ -10818,7 +10818,7 @@ function BeeSwarmSimulator(DATA){
                             
                             token=this.gatheringTokens[token].type
                             
-                            objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),fieldInfo[player.fieldIn].y+1,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),fieldInfo[player.fieldIn].y+1,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this}))
                         }
                         
                         this.flowerCollecting=[]
@@ -11082,9 +11082,9 @@ function BeeSwarmSimulator(DATA){
                                 }
                             }
                             
-                            objects.tokens.push(new Token(effects.precision.tokenLife,[this.targets[2].pos[0],this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'precision',{field:this.targets[2].field,x:this.targets[2].x,z:this.targets[2].z,bee:this}))
-                            objects.tokens.push(new Token(effects.focus.tokenLife,[this.targets[2].pos[0]+1,this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'focus',{field:this.targets[2].field,x:this.targets[2].x+1,z:this.targets[2].z,bee:this}))
-                            objects.tokens.push(new Token(effects.redBoost.tokenLife,[this.targets[2].pos[0]-1,this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'redBoost',{field:this.targets[2].field,x:this.targets[2].x-1,z:this.targets[2].z,bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.precision.tokenLife,[this.targets[2].pos[0],this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'precision',{field:this.targets[2].field,x:this.targets[2].x,z:this.targets[2].z,bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.focus.tokenLife,[this.targets[2].pos[0]+1,this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'focus',{field:this.targets[2].field,x:this.targets[2].x+1,z:this.targets[2].z,bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.redBoost.tokenLife,[this.targets[2].pos[0]-1,this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'redBoost',{field:this.targets[2].field,x:this.targets[2].x-1,z:this.targets[2].z,bee:this}))
                             
                         }
                         
@@ -11103,13 +11103,13 @@ function BeeSwarmSimulator(DATA){
                             if(_t.activated){
                                 
                                 if(i!==2)
-                                    objects.tokens.push(new Token(effects.focus.tokenLife,[_t.pos[0],_t.pos[1]+0.5,_t.pos[2]],'focus',{field:_t.field,x:_t.x,z:_t.z,bee:this}))
+                                    if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.focus.tokenLife,[_t.pos[0],_t.pos[1]+0.5,_t.pos[2]],'focus',{field:_t.field,x:_t.x,z:_t.z,bee:this}))
                                 
                                 collectPollen({x:_t.x,z:_t.z,pattern:[[-4,0],[-3,-2],[-3,-1],[-3,0],[-3,1],[-3,2],[-2,-3],[-2,-2],[-2,-1],[-2,0],[-2,1],[-2,2],[-2,3],[-1,-3],[-1,-2],[-1,-1],[-1,0],[-1,1],[-1,2],[-1,3],[0,-4],[0,-3],[0,-2],[0,-1],[0,0],[0,1],[0,2],[0,3],[0,4],[1,-3],[1,-2],[1,-1],[1,0],[1,1],[1,2],[1,3],[2,-3],[2,-2],[2,-1],[2,0],[2,1],[2,2],[2,3],[3,-2],[3,-1],[3,0],[3,1],[3,2],[4,0]],amount:(this.attack+player[beeInfo[this.type].color+'BeeAttack'])*player.beeAttack*(this.level*0.1+1)*0.5,yOffset:2+Math.random()*0.4,stackHeight:0.5+Math.random()*0.5,instantConversion:(player.flameHeatStack-1)*0.5,multiplier:player.flameHeatStack*3,field:_t.field})
                                 
                             } else {
                                 
-                                objects.tokens.push(new Token(effects.redBoost.tokenLife,[_t.pos[0],_t.pos[1]+0.5,_t.pos[2]],'redBoost',{field:_t.field,x:_t.x,z:_t.z,bee:this}))
+                                if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.redBoost.tokenLife,[_t.pos[0],_t.pos[1]+0.5,_t.pos[2]],'redBoost',{field:_t.field,x:_t.x,z:_t.z,bee:this}))
                             }
                         }
                         
@@ -11402,7 +11402,7 @@ function BeeSwarmSimulator(DATA){
                             
                             token=this.attackTokens[token].type
                             
-                            objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),Math.round(this.pos[1])+0.5,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this},true))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),Math.round(this.pos[1])+0.5,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this},true))
                             
                         }
                     }
@@ -11516,7 +11516,7 @@ function BeeSwarmSimulator(DATA){
                             
                             token=this.gatheringTokens[token].type
                             
-                            objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),fieldInfo[player.fieldIn].y+1,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects[token].tokenLife,[Math.round(this.pos[0]),fieldInfo[player.fieldIn].y+1,Math.round(this.pos[2])],token,{field:player.fieldIn,x:this.flowerCollecting[0],z:this.flowerCollecting[1],bee:this}))
                             
                         }
                         
@@ -11596,9 +11596,9 @@ function BeeSwarmSimulator(DATA){
                                 }
                             }
                             
-                            objects.tokens.push(new Token(effects.precision.tokenLife,[this.targets[2].pos[0],this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'precision',{field:this.targets[2].field,x:this.targets[2].x,z:this.targets[2].z,bee:this}))
-                            objects.tokens.push(new Token(effects.focus.tokenLife,[this.targets[2].pos[0]+1,this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'focus',{field:this.targets[2].field,x:this.targets[2].x+1,z:this.targets[2].z,bee:this}))
-                            objects.tokens.push(new Token(effects.redBoost.tokenLife,[this.targets[2].pos[0]-1,this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'redBoost',{field:this.targets[2].field,x:this.targets[2].x-1,z:this.targets[2].z,bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.precision.tokenLife,[this.targets[2].pos[0],this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'precision',{field:this.targets[2].field,x:this.targets[2].x,z:this.targets[2].z,bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.focus.tokenLife,[this.targets[2].pos[0]+1,this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'focus',{field:this.targets[2].field,x:this.targets[2].x+1,z:this.targets[2].z,bee:this}))
+                            if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.redBoost.tokenLife,[this.targets[2].pos[0]-1,this.targets[2].pos[1]+0.5,this.targets[2].pos[2]],'redBoost',{field:this.targets[2].field,x:this.targets[2].x-1,z:this.targets[2].z,bee:this}))
                             
                         }
                         
@@ -11617,13 +11617,13 @@ function BeeSwarmSimulator(DATA){
                             if(_t.activated){
                                 
                                 if(i!==2)
-                                    objects.tokens.push(new Token(effects.focus.tokenLife,[_t.pos[0],_t.pos[1]+0.5,_t.pos[2]],'focus',{field:_t.field,x:_t.x,z:_t.z,bee:this}))
+                                    if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.focus.tokenLife,[_t.pos[0],_t.pos[1]+0.5,_t.pos[2]],'focus',{field:_t.field,x:_t.x,z:_t.z,bee:this}))
                                 
                                 collectPollen({x:_t.x,z:_t.z,pattern:[[-4,0],[-3,-2],[-3,-1],[-3,0],[-3,1],[-3,2],[-2,-3],[-2,-2],[-2,-1],[-2,0],[-2,1],[-2,2],[-2,3],[-1,-3],[-1,-2],[-1,-1],[-1,0],[-1,1],[-1,2],[-1,3],[0,-4],[0,-3],[0,-2],[0,-1],[0,0],[0,1],[0,2],[0,3],[0,4],[1,-3],[1,-2],[1,-1],[1,0],[1,1],[1,2],[1,3],[2,-3],[2,-2],[2,-1],[2,0],[2,1],[2,2],[2,3],[3,-2],[3,-1],[3,0],[3,1],[3,2],[4,0]],amount:(this.attack+player[beeInfo[this.type].color+'BeeAttack'])*player.beeAttack*0.75,yOffset:2+Math.random()*0.4,stackHeight:0.5+Math.random()*0.5,instantConversion:(player.flameHeatStack-1)*0.5,multiplier:player.flameHeatStack*5,field:_t.field})
                                 
                             } else {
                                 
-                                objects.tokens.push(new Token(effects.redBoost.tokenLife,[_t.pos[0],_t.pos[1]+0.5,_t.pos[2]],'redBoost',{field:_t.field,x:_t.x,z:_t.z,bee:this}))
+                                if(beeTokenProductionAllowed(player,TIME))objects.tokens.push(new Token(effects.redBoost.tokenLife,[_t.pos[0],_t.pos[1]+0.5,_t.pos[2]],'redBoost',{field:_t.field,x:_t.x,z:_t.z,bee:this}))
                             }
                         }
                         
@@ -34643,20 +34643,8 @@ function BeeSwarmSimulator(DATA){
         player.flowerIn=beeWork.flower
         player.beeWorkPosition=beeWork.position
         try{
-        // Keep bees working for 10 seconds after the backpack fills.
-        if(!player.fieldIn || player.pollen < player.capacity){
-            player.fullBagSince = null
-        } else if(player.fullBagSince == null){
-            player.fullBagSince = TIME
-        }
-
-        player.beesCanWork = !!player.fieldIn && (
-            player.pollen < player.capacity ||
-            (
-                player.fullBagSince != null &&
-                TIME - player.fullBagSince < 10
-            )
-        )
+        // The full-bag timer persists even when walking out of the field.
+        player.beesCanWork=beeTokenProductionAllowed(player,TIME)&&!!player.fieldIn
         for(let i in objects.bees){
             
             objects.bees[i].update()
@@ -35346,4 +35334,10 @@ function getBeeFieldWork(player,time){
         player.beeFieldMemory=null
     }
     return {field:null,flower:null,position:null}
+}
+
+function beeTokenProductionAllowed(player,time){
+    if(player.pollen<player.capacity){player.fullBagSince=null;return true}
+    if(player.fullBagSince==null)player.fullBagSince=time
+    return time-player.fullBagSince<10
 }
