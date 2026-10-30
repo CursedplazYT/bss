@@ -34547,7 +34547,7 @@ function BeeSwarmSimulator(DATA){
         player.hiveMesh.render()
         
         player.updateFields()
-        gameAudio.tick(player,isBeesmas,triggers,TIME)
+        gameAudio.tick(player,isBeesmas,triggers,TIME,fieldInfo)
         
         gl.useProgram(beeGeometryProgram)
         
@@ -34854,8 +34854,15 @@ const BSS_AUDIO_FILES={
 function createBssAudio(){
     if(window.bssAudio) return window.bssAudio
     const files=BSS_AUDIO_FILES
-    let settings={music:0.3,effects:0.55,muted:false,track:'auto'}
+    let settings={music:0.55,effects:0.55,stars:0.85,muted:false,track:'auto'}
     try{Object.assign(settings,JSON.parse(localStorage.getItem('bss-audio-settings')||'{}'))}catch(e){}
+    if(settings.mixVersion!==2){
+        settings.music=Math.max(Number(settings.music)||0,0.55)
+        settings.stars=0.85
+        settings.track='auto'
+        settings.mixVersion=2
+    }
+    settings.stars=Math.max(0,Math.min(1,Number(settings.stars)||0))
     settings.music=Math.max(0,Math.min(1,Number(settings.music)||0))
     settings.effects=Math.max(0,Math.min(1,Number(settings.effects)||0))
     const music=new Audio(),playing=new Set(),lastPlayed={}
@@ -34865,7 +34872,7 @@ function createBssAudio(){
     const panel=document.createElement('details')
     panel.id='bss-audio-controls'
     panel.style.cssText='position:fixed;bottom:12px;right:12px;z-index:100000;background:#fff4cb;color:#302508;border:2px solid #b58a15;border-radius:10px;padding:8px;font:14px Arial;max-width:260px;box-shadow:0 2px 10px #0004;user-select:auto'
-    panel.innerHTML='<summary style="cursor:pointer">Audio</summary><div style="display:grid;gap:8px;padding-top:10px"><button type="button" data-mute style="width:auto">Mute</button><label>Music <input data-music type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>Effects <input data-effects type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>Track <select data-track style="max-width:180px"></select></label><small data-status>Click or press a key to enable audio.</small></div>'
+    panel.innerHTML='<summary style="cursor:pointer">Audio</summary><div style="display:grid;gap:8px;padding-top:10px"><button type="button" data-mute style="width:auto">Mute</button><label>Music <input data-music type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>SSA / Stars <input data-stars type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>Effects <input data-effects type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>Track <select data-track style="max-width:180px"></select></label><small data-status>Click or press a key to enable audio.</small></div>'
     document.body.appendChild(panel)
     const status=panel.querySelector('[data-status]'),mute=panel.querySelector('[data-mute]'),select=panel.querySelector('[data-track]')
     const tracks=['wax','bpatrol','overflowin4','mountaincall','vendor','antmarch1','stickbug','digitize','rbcloading','crawlers','starhall','gbtune1','drone','hibernation','nectar']
@@ -34876,9 +34883,17 @@ function createBssAudio(){
     select.value=settings.track
     function save(){try{localStorage.setItem('bss-audio-settings',JSON.stringify(settings))}catch(e){}}
     function label(){status.textContent=failed?'Could not load '+failed+'. Check the audio/bss folder.':!unlocked?'Click or press a key to enable audio.':settings.muted?'Audio muted.':'Playing: '+(current||desired);mute.textContent=settings.muted?'Unmute':'Mute'}
-    function volumes(){music.volume=settings.muted?0:settings.music;for(const a of playing)a.volume=settings.muted?0:settings.effects;label()}
+    const starTracks=new Set(['popStar','scorchingStar','gummyStar'])
+    const effectGains={flameFuelToken:0.07,infernoToken:0.10,bombToken:0.14,rageToken:0.14,frog:0.15,haste:0.30,boostToken:0.30,markToken:0.35,focusToken:0.40,inflateBalloons:0.30,surpriseParty:0.85,babyLove:0.85,melodyToken:1.15,inspireToken:1.05}
+    function musicVolume(){
+        if(settings.muted)return 0
+        if(starTracks.has(current))return settings.stars
+        return Math.min(1,settings.music*(['wax','drone'].includes(current)?1.30:1))
+    }
+    function volumes(){music.volume=musicVolume();for(const a of playing)a.volume=settings.muted?0:Math.min(1,settings.effects*a.bssGain);label()}
+
     function resume(){
-        if(!unlocked||settings.muted||settings.music<=0)return
+        if(!unlocked||musicVolume()<=0)return
         if(music.paused){const p=music.play();if(p)p.catch(()=>{status.textContent='Click Unmute or interact with the game to enable music.'})}
     }
     function setMusic(name){
@@ -34894,23 +34909,23 @@ function createBssAudio(){
     document.addEventListener('keydown',unlock,{capture:true})
     for(const event of ['pointerdown','pointerup','click','keydown','keyup','touchstart','touchend'])panel.addEventListener(event,e=>e.stopPropagation())
     mute.onclick=()=>{settings.muted=!settings.muted;save();volumes();if(settings.muted){music.pause();for(const a of playing)a.pause()}else unlock()}
-    for(const key of ['music','effects']){
+    for(const key of ['music','stars','effects']){
         const input=panel.querySelector('[data-'+key+']');input.value=settings[key]
-        input.oninput=()=>{settings[key]=Number(input.value);save();volumes();if(key==='music'){if(!settings.music)music.pause();else unlock()}}
+        input.oninput=()=>{settings[key]=Number(input.value);save();volumes();if(key!=='effects'){if(!musicVolume())music.pause();else unlock()}}
     }
     select.onchange=()=>{settings.track=select.value;save();unlock()}
     const tokenSounds={haste:'haste',hastePlus:'haste',focus:'focusToken',melody:'melodyToken',babyLove:'babyLove',inspire:'inspireToken',rage:'rageToken',redBoost:'boostToken',blueBoost:'boostToken',whiteBoost:'boostToken',whiteBomb:'bombToken',redBomb:'bombToken',blueBomb:'bombToken',whiteBomb_:'bombToken',redBomb_:'bombToken',blueBomb_:'bombToken',whiteBombPlus:'bombToken',redBombPlus:'bombToken',blueBombPlus:'bombToken',pollenMark:'markToken',honeyMark:'markToken',preciseMark:'markToken',inferno:'infernoToken',flameFuel:'flameFuelToken',summonFrog:'frog',inflateBalloons:'inflateBalloons',surpriseParty:'surpriseParty'}
     function effect(name,rate=1){
         if(!unlocked||settings.muted||settings.effects<=0||!files[name])return
-        const now=performance.now()
-        if(now-(lastPlayed[name]??-Infinity)<90||playing.size>=20)return
+        const now=performance.now(),gap=['flameFuelToken','infernoToken','bombToken','rageToken','frog'].includes(name)?350:90
+        if(now-(lastPlayed[name]??-Infinity)<gap||playing.size>=12)return
         lastPlayed[name]=now
-        const a=new Audio(files[name]);a.volume=settings.effects;a.playbackRate=Math.max(0.5,Math.min(2,rate));playing.add(a)
+        const a=new Audio(files[name]);a.bssGain=effectGains[name]??0.55;a.volume=Math.min(1,settings.effects*a.bssGain);a.playbackRate=Math.max(0.5,Math.min(2,rate));playing.add(a)
         const done=()=>{playing.delete(a);a.removeAttribute('src');a.load()}
         a.addEventListener('ended',done,{once:true});a.addEventListener('error',done,{once:true})
         const p=a.play();if(p)p.catch(done)
     }
-    function choose(p,beesmas,triggers){
+    function choose(p,beesmas,triggers,fields){
         if(p.roboChallenge)return p.roboChallenge.isPlaying?'digitize':'rbcloading'
         if(p.antChallenge)return 'antmarch1'
         if(p.activeStickbug)return 'stickbug'
@@ -34924,19 +34939,36 @@ function createBssAudio(){
         for(const key in triggers){if(/star_amulet_generator$/.test(key)&&triggers[key].colliding)return 'starhall'}
         if(pos.x>-56&&pos.x<-28&&pos.z>6&&pos.z<27&&pos.y<1)return 'crawlers'
         if(p.targetLight<1)return 'mountaincall'
-        if(['CoconutField','PepperPatch','PineTreeForest','PumpkinPatch','CactusField','MountainTopField','PineapplePatch','StumpField'].includes(p.fieldIn))return 'overflowin4'
-        if(['RoseField','StrawberryField','SpiderField','BambooField'].includes(p.fieldIn))return 'bpatrol'
-        if(!p.fieldIn&&pos.y>10)return 'overflowin4'
-        if(!p.fieldIn&&pos.y>1.5)return 'bpatrol'
+        const fieldTracks={
+            SunflowerField:'starter',DandelionField:'starter',MushroomField:'starter',BlueFlowerField:'starter',CloverField:'starter',
+            StrawberryField:'bpatrol',SpiderField:'bpatrol',BambooField:'bpatrol',RoseField:'bpatrol',
+            PineapplePatch:'bpatrol',StumpField:'bpatrol',CactusField:'bpatrol',PumpkinPatch:'bpatrol',PineTreeForest:'bpatrol',MountainTopField:'bpatrol',
+            CoconutField:'overflowin4',PepperPatch:'overflowin4',AntField:'antmarch1'
+        }
+        // Ground bounds remain stable while jumping above the flowers.
+        let field=p.fieldIn
+        if(!field&&fields){
+            let closest=Infinity
+            for(const name in fields){
+                const f=fields[name],dy=Math.abs(pos.y-f.y)
+                if(pos.x>=f.x-0.5&&pos.x<f.x+f.width-0.5&&pos.z>=f.z-0.5&&pos.z<f.z+f.length-0.5&&dy<15&&dy<closest){field=name;closest=dy}
+            }
+        }
+        const track=fieldTracks[field]
+        if(track)return track==='starter'?(beesmas?'drone':'wax'):track
+        // Match map areas rather than player height (jumping is not a music zone).
+        if(pos.z < -18 && pos.x > 20)return 'overflowin4'
+        if(pos.z > 44 || (pos.x > 25 && pos.z > 29))return 'bpatrol'
         return beesmas?'drone':'wax'
     }
     window.bssAudio={
         effect,
         token(type){const name=tokenSounds[type];if(name)effect(name)},
-        tick(p,beesmas,triggers,time){if(time-lastTick<0.4)return;lastTick=time;setMusic(choose(p,beesmas,triggers))},
+        tick(p,beesmas,triggers,time,fields){if(time-lastTick<0.4)return;lastTick=time;setMusic(choose(p,beesmas,triggers,fields))},
         reset(){lastTick=-Infinity;for(const a of playing){a.pause();a.removeAttribute('src');a.load()}playing.clear();setMusic('wax')},
         setMusic
     }
+    save()
     setMusic('wax')
     return window.bssAudio
 }
