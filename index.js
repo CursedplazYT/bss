@@ -5759,7 +5759,7 @@ function BeeSwarmSimulator(DATA){
             
             activate(){
                 
-                if(player.fieldIn){
+                if(player.beesCanWork){
                     
                     objects.mobs.push(new StarShower(player.fieldIn))
                 }
@@ -10664,7 +10664,7 @@ function BeeSwarmSimulator(DATA){
 
                 case 'moveToPlanter':
                     
-                    if(!player.fieldIn||!fieldInfo[player.fieldIn].planter){
+                    if(!player.beesCanWork || !fieldInfo[player.fieldIn].planter){
                         
                         this.state='moveToPlayer'
                         break
@@ -10691,7 +10691,7 @@ function BeeSwarmSimulator(DATA){
 
                 case 'collectPlanter':
                     
-                    if(!player.fieldIn||!fieldInfo[player.fieldIn].planter){
+                    if(!player.beesCanWork || !fieldInfo[player.fieldIn].planter){
                         
                         this.state='moveToPlayer'
                         return
@@ -10737,7 +10737,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'moveToFlower':
                     
-                    if(!player.fieldIn){
+                    if(!player.beesCanWork){
                         
                         this.state='moveToPlayer'
                         break
@@ -10772,7 +10772,7 @@ function BeeSwarmSimulator(DATA){
                 
                 case 'collectPollen':
                     
-                    if(!player.fieldIn){
+                    if(!player.beesCanWork){
                         
                         this.state='moveToPlayer'
                         return
@@ -34544,54 +34544,20 @@ function BeeSwarmSimulator(DATA){
         gl.useProgram(beeGeometryProgram)
         
         gl.uniformMatrix4fv(glCache.bee_viewMatrix,gl.FALSE,player.viewMatrix)
-        // Allow another token burst after the bag drops below 90%.
-        if(player.pollen < player.capacity * 0.9){
-            player.fullBagTokenBurst = false
+        // Keep bees working for 10 seconds after the backpack fills.
+        if(!player.fieldIn || player.pollen < player.capacity){
+            player.fullBagSince = null
+        } else if(player.fullBagSince == null){
+            player.fullBagSince = TIME
         }
 
-        //  Once per full bag: every bee drops one guaranteed token.
-        if(
-            player.fieldIn &&
-            player.flowerIn &&
-            player.pollen >= player.capacity &&
-            !player.fullBagTokenBurst
-        ){
-            player.fullBagTokenBurst = true
-
-            for(let bee of [...objects.bees, ...objects.tempBees]){
-                let choices = bee.gatheringTokens.filter(token =>
-                    (!token.requireGifted || bee.gifted) &&
-                    effects[token.type]
-                )
-
-                // Bees without an available ability give Red Boost.
-                let chosen = choices.length
-                    ? choices[Math.floor(Math.random() * choices.length)]
-                    : null
-
-                let type = chosen ? chosen.type : 'redBoost'
-
-                if(chosen){
-                    chosen.timer = TIME
-                }
-
-                objects.tokens.push(new Token(
-                    effects[type].tokenLife,
-                    [
-                        player.body.position.x + Math.random() * 6 - 3,
-                        fieldInfo[player.fieldIn].y + 1,
-                        player.body.position.z + Math.random() * 6 - 3
-                    ],
-                    type,
-                    {
-                        field: player.fieldIn,
-                        x: player.flowerIn.x,
-                        z: player.flowerIn.z,
-                        bee: bee
-                    }
-                ))
-            }
-        }
+        player.beesCanWork = !!player.fieldIn && (
+            player.pollen < player.capacity ||
+            (
+                player.fullBagSince != null &&
+                TIME - player.fullBagSince < 10
+            )
+        )
         for(let i in objects.bees){
             
             objects.bees[i].update()
