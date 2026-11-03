@@ -30275,7 +30275,7 @@ function BeeSwarmSimulator(DATA){
             if(!this.collected){
                 
                 this.collected=true
-                gameAudio.lootPickup(this.type)
+                if(this.type!=='honey'||this.from!=='Coconut')gameAudio.lootPickup(this.type)
                 this.life=0.75
                 
                 player.stats[this.type+'Tokens']++
