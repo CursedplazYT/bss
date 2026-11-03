@@ -21447,6 +21447,7 @@ function BeeSwarmSimulator(DATA){
 
     let gear=window.playerGear
     registerBssCoconutBelt(gear)
+    gear.belt.coconutBelt.mesh=drawBssCoconutBelt
     Object.assign(gear.sprinkler.superSaturator,{
         power:1.5,rate:0.5,diameter:24,
         desc:'The ultimate sprinkler, upgraded for heavy boosts.<br><br>Count: 1<br>Diameter: 24<br>Power: 150<br>Rate: 0.5s<br>Fully restores depleted flowers in range twice per second.<br><br>Press "R" to place a sprinkler.'
@@ -28518,10 +28519,10 @@ function BeeSwarmSimulator(DATA){
             },{
                 name:'coconutBelt',
                 slot:'belt',
-                viewMatrix:[14.75,16.4,-41.1,-MATH.HALF_PI,-0.3],
-                displayPos:[10.75,15.3,-41.1],
+                viewMatrix:[16,16.1,-40,-MATH.HALF_PI,-0.25],
+                displayPos:[12,14.9,-40],
                 displayRot:[0,82,0],
-                displayScale:[2.4,2.4,2.4],
+                displayScale:[1.6,1.6,1.6],
             }],
             currentIndex:0,message:'Explore Coconut Cave Shop'
         },
@@ -28808,10 +28809,7 @@ function BeeSwarmSimulator(DATA){
                     } else {
 
                         gear[si.slot][si.name].mesh(box,cylinder,sphere,star,applyFinalRotation,false)
-                        if(si.name==='coconutBelt'){
-                            box(0,-0.47,0,1.5,0.15,1,false,[0.35,0.2,0.08],false,false)
-                            box(0,-0.38,0,1.55,0.04,1.05,false,[0.95,0.85,0.55],false,false)
-                        }
+
                     }
                 }
             }
@@ -35622,4 +35620,19 @@ function registerBssCoconutBelt(gear){
             cost:['7500000000000 honey','500 coconut','1500 tropicalDrink','200 purplePotion','200 hardWax','3 turpentine','3 refreshingVial'],
         }
     return gear.belt.coconutBelt
+}
+
+// Open waist strap with a coconut cross-section buckle, shared by shop and avatar.
+function drawBssCoconutBelt(box,cylinder,sphere){
+    const brown=[0.32,0.18,0.07],cream=[0.95,0.9,0.72]
+    box(0,-0.1,-0.27,0.86,0.13,0.07,false,brown)
+    box(-0.43,-0.1,0,0.07,0.13,0.54,false,brown)
+    box(0.43,-0.1,0,0.07,0.13,0.54,false,brown)
+    box(-0.27,-0.1,0.28,0.34,0.13,0.07,false,cream)
+    box(0.27,-0.1,0.28,0.34,0.13,0.07,false,cream)
+    box(-0.29,-0.1,0.325,0.25,0.055,0.025,false,[0.85,0.06,0.04])
+    box(0.29,-0.1,0.325,0.25,0.055,0.025,false,[0.08,0.28,0.85])
+    cylinder(0,-0.1,0.34,0.215,0.11,16,0.32,0.18,0.07,1,0,0,0,0.215)
+    cylinder(0,-0.1,0.403,0.178,0.025,16,0.97,0.95,0.84,1,0,0,0,0.178)
+    cylinder(0,-0.1,0.42,0.102,0.012,16,0.52,0.32,0.13,1,0,0,0,0.102)
 }
