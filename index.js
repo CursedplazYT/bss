@@ -20247,11 +20247,12 @@ function BeeSwarmSimulator(DATA){
         
         setMesh(verts,index){
             
+            const wideIndices=!this.isStatic&&verts.length/9>65535
             this.mesh={
                 
                 data:{
                     verts:new Float32Array(verts),
-                    index:new Uint16Array(index)
+                    index:wideIndices?new Uint32Array(index):new Uint16Array(index)
                 },
                 buffers:{
                     verts:gl.createBuffer(),
@@ -20259,6 +20260,7 @@ function BeeSwarmSimulator(DATA){
                 },
                 
                 indexAmount:index.length,
+                indexType:wideIndices?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,
             }
         }
         
@@ -21048,86 +21050,27 @@ function BeeSwarmSimulator(DATA){
                     
                 }
                 
-                addCylinder=function(x,y,z,rad,hei,sides,r,g,b,rx,ry,rz,r2){
-                    let rad2=r2??rad,vl=verts.length/9,_verts=[],_index=[]
-                    
-                    for(let t=0,inc=MATH.TWO_PI/sides;t<=MATH.TWO_PI;t+=inc){
-                        
-                        let t1=t-inc*0.5,t2=t+inc*0.5
-                        _verts.push(
-                            Math.cos(t1)*rad,Math.sin(t1)*rad,hei*0.5,r,g,b,Math.cos(t1),Math.sin(t1),0,
-                            Math.cos(t1)*rad2,Math.sin(t1)*rad2,-hei*0.5,r,g,b,Math.cos(t1),Math.sin(t1),0,
-                            Math.cos(t2)*rad,Math.sin(t2)*rad,hei*0.5,r,g,b,Math.cos(t2),Math.sin(t2),0,
-                            Math.cos(t2)*rad2,Math.sin(t2)*rad2,-hei*0.5,r,g,b,Math.cos(t2),Math.sin(t2),0)
-                        
-                        let _vl=_verts.length/9
-                        _index.push(_vl,_vl+1,_vl+2,_vl+3,_vl+2,_vl+1)
+                addCylinder=function(x,y,z,rad,hei,sides,r,g,b,rx=0,ry=0,rz=0,r2=rad){
+                    const rotation=quat.fromEuler([],rx,ry,rz)
+                    function triangle(pa,pb,pc){
+                        const ps=[pa,pb,pc].map(p=>vec3.transformMat4([],vec3.add([],vec3.transformQuat([],p,rotation),[x,y,z]),DIS.matrix))
+                        const cross=vec3.cross([0,0,0],vec3.sub([],ps[1],ps[0]),vec3.sub([],ps[2],ps[0]))
+                        if(vec3.squaredLength(cross)<1e-18)return
+                        const normal=vec3.normalize([0,0,0],cross)
+                        const base=verts.length/9
+                        for(const p of ps)verts.push(...p,r,g,b,...normal)
+                        index.push(base,base+1,base+2)
                     }
-                    
-                    let _v=_verts.length/9
-                    
-                    for(let t=0,inc=MATH.TWO_PI/sides;t<=MATH.TWO_PI;t+=inc){
-                        
-                        let t1=t-inc*0.5,t2=t+inc*0.5
-                        _verts.push(
-                            Math.cos(t1)*rad,Math.sin(t1)*rad,hei*0.5,r,g,b,0,0,1,
-                            Math.cos(t2)*rad,Math.sin(t2)*rad,hei*0.5,r,g,b,0,0,1)
+                    for(let i=0;i<sides;i++){
+                        const a=i*MATH.TWO_PI/sides,b=(i+1)*MATH.TWO_PI/sides
+                        const at=[Math.cos(a)*rad,Math.sin(a)*rad,hei/2],bt=[Math.cos(b)*rad,Math.sin(b)*rad,hei/2]
+                        const ab=[Math.cos(a)*r2,Math.sin(a)*r2,-hei/2],bb=[Math.cos(b)*r2,Math.sin(b)*r2,-hei/2]
+                        triangle(at,ab,bt);triangle(bt,ab,bb)
+                        if(rad!==0)triangle([0,0,hei/2],at,bt)
+                        if(r2!==0)triangle([0,0,-hei/2],bb,ab)
                     }
-                    for(let l=_verts.length/9,i=_v;i<l-1;i++){
-                        
-                        _index.push(_v,i,i+2)
-                    }
-                    _v=_verts.length/9
-                    for(let t=0,inc=MATH.TWO_PI/sides;t<=MATH.TWO_PI;t+=inc){
-                        
-                        let t1=t-inc*0.5,t2=t+inc*0.5
-                        _verts.push(
-                            
-                            Math.cos(t1)*rad2,Math.sin(t1)*rad2,-hei*0.5,r,g,b,0,0,-1,
-                            Math.cos(t2)*rad2,Math.sin(t2)*rad2,-hei*0.5,r,g,b,0,0,-1)
-                    }
-                    for(let l=_verts.length/9,i=_v;i<l;i++){
-                        
-                        _index.push(i,i-1,_v)
-                    }
-                    
-                    for(let i in _index){
-                        
-                        _index[i]+=vl
-                    }
-                    
-                    index.push(..._index)
-                    
-                    let rotQuat=quat.fromEuler([],rx,ry,rz)
-                    
-                    for(let i=0;i<_verts.length;i+=9){
-                        
-                        if(rx){
-                            
-                            let rotated=vec3.transformQuat([],[_verts[i],_verts[i+1],_verts[i+2]],rotQuat)
-                            _verts[i]=rotated[0]+x
-                            _verts[i+1]=rotated[1]+y
-                            _verts[i+2]=rotated[2]+z
-                            
-                            rotated=vec3.transformQuat(rotated,[_verts[i+6],_verts[i+7],_verts[i+8]],rotQuat)
-                            
-                            _verts[i+6]=rotated[0]
-                            _verts[i+7]=rotated[1]
-                            _verts[i+8]=rotated[2]
-                            
-                        } else {
-                            
-                            _verts[i]+=x
-                            _verts[i+1]+=y
-                            _verts[i+2]+=z
-                        }
-
-                        [_verts[i],_verts[i+1],_verts[i+2]]=vec3.transformMat4([],[_verts[i],_verts[i+1],_verts[i+2]],DIS.matrix)
-                    }
-                    
-                    verts.push(..._verts)
                 }
-                
+
                 addSphere=function(x,y,z,rad,detail,r,g,b,vl){
                     
                     let _m=MATH.icosphere(detail),_verts=[],_index=[]
@@ -21248,6 +21191,40 @@ function BeeSwarmSimulator(DATA){
                 }
             }
             
+            // Extruded flat shapes used by the reference-based gear models.
+            // Gear meshes use nine floats per vertex, independently of map meshes.
+            if(!this.isStatic)addBox.bssPolygon=function(points,z,depth,color){
+                const area=points.reduce((sum,p,i)=>{const q=points[(i+1)%points.length];return sum+p[0]*q[1]-q[0]*p[1]},0)
+                const poly=area<0?points.slice().reverse():points.slice(),remaining=poly.map((_,i)=>i),triangles=[]
+                const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
+                const inside=(p,a,b,c)=>cross(a,b,p)>=-1e-9&&cross(b,c,p)>=-1e-9&&cross(c,a,p)>=-1e-9
+                let attempts=poly.length*poly.length
+                while(remaining.length>3&&attempts-->0){
+                    let found=false
+                    for(let j=0;j<remaining.length;j++){
+                        const ai=remaining[(j+remaining.length-1)%remaining.length],bi=remaining[j],ci=remaining[(j+1)%remaining.length]
+                        if(cross(poly[ai],poly[bi],poly[ci])<=1e-9)continue
+                        if(remaining.some(k=>k!==ai&&k!==bi&&k!==ci&&inside(poly[k],poly[ai],poly[bi],poly[ci])))continue
+                        triangles.push([ai,bi,ci]);remaining.splice(j,1);found=true;break
+                    }
+                    if(!found)break
+                }
+                if(remaining.length===3)triangles.push(remaining.slice())
+                if(triangles.length!==poly.length-2)throw new Error('Invalid gear polygon')
+                function emit(a,b,c){
+                    const ps=[a,b,c].map(p=>vec3.transformMat4([],p,DIS.matrix))
+                    const cross=vec3.cross([0,0,0],vec3.sub([],ps[1],ps[0]),vec3.sub([],ps[2],ps[0]))
+                    if(vec3.squaredLength(cross)<1e-18)return
+                    const n=vec3.normalize([0,0,0],cross)
+                    const start=verts.length/9
+                    for(const p of ps)verts.push(...p,...color,...n)
+                    index.push(start,start+1,start+2)
+                }
+                const front=poly.map(p=>[p[0],p[1],z+depth/2]),back=poly.map(p=>[p[0],p[1],z-depth/2])
+                for(const [a,b,c]of triangles){emit(front[a],front[b],front[c]);emit(back[c],back[b],back[a])}
+                for(let i=0;i<poly.length;i++){const j=(i+1)%poly.length;emit(front[j],front[i],back[i]);emit(front[j],back[i],back[j])}
+            }
+
             func(addBox,addHiveSlot,addCylinder,addSphere,applyFinalRotation,addGiftedRing,addStar,addLimbBox,addLimbCylinder)
             this.setMesh(verts,index)
         }
@@ -21296,7 +21273,7 @@ function BeeSwarmSimulator(DATA){
                 gl.vertexAttribPointer(glCache.dynamic_vertNormal,3,gl.FLOAT,gl.FALSE,36,24)
             }
                 
-            gl.drawElements(gl.TRIANGLES,this.mesh.indexAmount,gl.UNSIGNED_SHORT,0)
+            gl.drawElements(gl.TRIANGLES,this.mesh.indexAmount,this.mesh.indexType,0)
             
         }
     }
@@ -23788,7 +23765,6 @@ function BeeSwarmSimulator(DATA){
             out.viewMatrixToChange=shops[out.currentShop].items[shops[out.currentShop].currentIndex].viewMatrix
             out.viewMatrixCopy=out.viewMatrix.slice()
             out.easeAmount=0
-            window.bssVisualAssets&&window.bssVisualAssets.showShopArt(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name,shopUI)
             itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)
             let s=Math.min((itemName.innerHTML.indexOf('Partridge')>-1?23:20)/itemName.innerHTML.length,1)*18
             itemName.style.fontSize=s+'px'
@@ -23840,8 +23816,7 @@ function BeeSwarmSimulator(DATA){
                 shops[out.currentShop].currentIndex=(shops[out.currentShop].currentIndex+shops[out.currentShop].items.length-1)%shops[out.currentShop].items.length
                 out.viewMatrixToChange=shops[out.currentShop].items[shops[out.currentShop].currentIndex].viewMatrix
                 out.easeAmount=0
-                window.bssVisualAssets&&window.bssVisualAssets.showShopArt(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name,shopUI)
-            itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)+(incre>1?' x'+MATH.abvNumber(incre+''):'')
+                itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)+(incre>1?' x'+MATH.abvNumber(incre+''):'')
                 let s=Math.min((itemName.innerHTML.indexOf('Partridge')>-1?23:20)/itemName.innerHTML.length,1)*18
                 itemName.style.fontSize=s+'px'
                 itemName.innerHTML='<div style="transform:translate(0px,'+(19-s)+'px)">'+itemName.innerHTML+'</div>'
@@ -23892,8 +23867,7 @@ function BeeSwarmSimulator(DATA){
                 shops[out.currentShop].currentIndex=(shops[out.currentShop].currentIndex+1)%shops[out.currentShop].items.length
                 out.viewMatrixToChange=shops[out.currentShop].items[shops[out.currentShop].currentIndex].viewMatrix
                 out.easeAmount=0
-                window.bssVisualAssets&&window.bssVisualAssets.showShopArt(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name,shopUI)
-            itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)+(incre>1?' x'+MATH.abvNumber(incre+''):'')
+                itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)+(incre>1?' x'+MATH.abvNumber(incre+''):'')
                 let s=Math.min((itemName.innerHTML.indexOf('Partridge')>-1?23:20)/itemName.innerHTML.length,1)*18
 
                 itemName.style.fontSize=s+'px'
@@ -32731,6 +32705,25 @@ function BeeSwarmSimulator(DATA){
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,Uint16Array.from(index),gl.STATIC_DRAW)
 
     meshes.plentyPlanter.indexAmount=index.length
+
+    if(window.bssPlanterVisuals){
+        for(const [name,draw]of Object.entries(window.bssPlanterVisuals)){
+            const model=new Mesh(false),emptyBuffers=model.mesh.buffers
+            model.setMeshFromFunction((box,a,cylinder,sphere)=>draw(box,cylinder,sphere))
+            const source=model.mesh.data.verts,packed=[]
+            for(let i=0;i<source.length;i+=9){
+                const shade=.75+.25*Math.abs(source[i+6]*.3+source[i+7]*.8+source[i+8]*.4)
+                packed.push(source[i],source[i+1],source[i+2],source[i+3]*shade,source[i+4]*shade,source[i+5]*shade)
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER,meshes[name].vertBuffer)
+            gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(packed),gl.STATIC_DRAW)
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,meshes[name].indexBuffer)
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,model.mesh.data.index,gl.STATIC_DRAW)
+            meshes[name].indexAmount=model.mesh.indexAmount
+            for(const buffers of [emptyBuffers,model.mesh.buffers]){gl.deleteBuffer(buffers.verts);gl.deleteBuffer(buffers.index)}
+        }
+    }
+
 
     meshes.spike={}
     meshes.spike.vertBuffer=gl.createBuffer()
