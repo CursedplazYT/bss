@@ -5,6 +5,7 @@ const paths={"agedGingerbreadBear": "assets/bss/agedGingerbreadBear.png", "antPa
 const ready=Promise.all(inventory.filter(id=>paths[id]).map(id=>new Promise(resolve=>{
  const im=new Image();im.onload=()=>{images[id]=im;resolve()};im.onerror=()=>resolve();im.src=paths[id];
 })));
+let art;
 window.bssVisualAssets={paths,images,ready,
  paintEffects(ctx,items){
   const painted=new Set();
@@ -19,7 +20,9 @@ window.bssVisualAssets={paths,images,ready,
    ctx.drawImage(im,x+(128-w)/2,y+(128-h)/2,w,h);ctx.restore();
   }
  },
- // Kept for compatibility with an older cached index.js. No floating pictures.
- showShopArt(){}
+ showShopArt(id,parent){
+  if(!art){art=document.createElement('img');art.alt='';art.style.cssText='position:absolute;left:50%;top:22%;transform:translateX(-50%);width:clamp(90px,14vw,180px);height:clamp(90px,14vw,180px);object-fit:contain;pointer-events:none;filter:drop-shadow(0 3px 5px #0005)';parent.appendChild(art);art.onerror=()=>{art.style.display='none'}}
+  art.style.display=paths[id]?'block':'none';if(paths[id]){art.src=paths[id];art.alt=id.replace(/([A-Z])/g,' $1')}
+ }
 };
 })();
