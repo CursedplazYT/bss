@@ -10371,6 +10371,8 @@ function BeeSwarmSimulator(DATA){
             this.gatherSpeed=beeInfo[this.type].gatherSpeed
             this.gatherAmount=beeInfo[this.type].gatherAmount
             this.convertAmount=beeInfo[this.type].convertAmount
+            this.coconutBeltConvertBonus=0
+            this.coconutBeltAttackBonus=0
             this.convertSpeed=beeInfo[this.type].convertSpeed
             this.maxEnergy=beeInfo[this.type].energy
             this.attack=beeInfo[this.type].attack
@@ -10773,7 +10775,7 @@ function BeeSwarmSimulator(DATA){
                     if(this.collectTimer<=0){
                         
                         this.energy--
-                        collectPollen({x:this.flowerCollecting[0],z:this.flowerCollecting[1],pattern:[[0,0]],amount:this.gatherAmount,yOffset:MATH.random(0.7,1.3),multiplier:{r:beeInfo[this.type].color==='red'?player.pollenFromBees*1.2*(this.type==='tabby'?player.tabbyLoveStacks:1):player.pollenFromBees*(this.type==='tabby'?player.tabbyLoveStacks:1),b:beeInfo[this.type].color==='blue'?player.pollenFromBees*1.2*(this.type==='tabby'?player.tabbyLoveStacks:1):player.pollenFromBees*(this.type==='tabby'?player.tabbyLoveStacks:1),w:player.pollenFromBees*(this.type==='tabby'?player.tabbyLoveStacks:1)}})
+                        collectPollen({x:this.flowerCollecting[0],z:this.flowerCollecting[1],pattern:[[0,0]],bee:this,amount:this.gatherAmount,yOffset:MATH.random(0.7,1.3),multiplier:{r:beeInfo[this.type].color==='red'?player.pollenFromBees*1.2*(this.type==='tabby'?player.tabbyLoveStacks:1):player.pollenFromBees*(this.type==='tabby'?player.tabbyLoveStacks:1),b:beeInfo[this.type].color==='blue'?player.pollenFromBees*1.2*(this.type==='tabby'?player.tabbyLoveStacks:1):player.pollenFromBees*(this.type==='tabby'?player.tabbyLoveStacks:1),w:player.pollenFromBees*(this.type==='tabby'?player.tabbyLoveStacks:1)}})
 
                         if(beeInfo[this.type].gatheringPassive){
                             
@@ -11472,7 +11474,7 @@ function BeeSwarmSimulator(DATA){
                         
                         this.energy--
                         
-                        collectPollen({x:this.flowerCollecting[0],z:this.flowerCollecting[1],pattern:[[0,0]],amount:this.gatherAmount,yOffset:MATH.random(0.7,1.3),multiplier:player.pollenFromBees})
+                        collectPollen({x:this.flowerCollecting[0],z:this.flowerCollecting[1],pattern:[[0,0]],bee:this,amount:this.gatherAmount,yOffset:MATH.random(0.7,1.3),multiplier:player.pollenFromBees})
                         if(beeInfo[this.type].gatheringPassive){
                             
                             beeInfo[this.type].gatheringPassive(this)
@@ -17876,6 +17878,8 @@ function BeeSwarmSimulator(DATA){
             this.glow=0
             this.vel=0
             this.displaySize=isBigFatBully?6:4.5
+            this.combo=beginBssComboCoconut(player,!!isBigFatBully)
+            if(this.combo){this.displaySize=3.5;player.addMessage('Combo Coconut! Catch the blue ring to juggle it.')}
         }
         
         die(index){
@@ -17925,9 +17929,29 @@ function BeeSwarmSimulator(DATA){
 
             }
             
+            if(this.combo){
+                const dx=this.pos[0]-player.body.position.x,dz=this.pos[2]-player.body.position.z
+                const caught=player.fieldIn===this.field&&vec3.sqrDist(this.pos,[player.body.position.x,player.body.position.y,player.body.position.z])<=this.displaySize
+                if(caught&&this.field!=='AntField'&&player.currentGear.belt==='coconutBelt'){
+                    if(!this.combo.kicks&&dx*dx+dz*dz<=0.64)this.combo.lockedField=this.field
+                    advanceBssCoconutCombo(this.combo,this.field,bssComboFieldColor(fieldInfo[this.field]))
+                    grantBssCoconutCombo(player,this.combo.stacks)
+                    if(this.combo.kicks<50&&!player.dead){
+                        this.field=this.combo.lockedField||player.fieldIn
+                        const f=fieldInfo[this.field]
+                        this.x=Math.max(1,Math.min(f.width-2,Math.round((player.body.position.x-f.x)+(Math.random()-0.5)*8)))
+                        this.z=Math.max(1,Math.min(f.length-2,Math.round((player.body.position.z-f.z)+(Math.random()-0.5)*8)))
+                        this.pos=[f.x+this.x,f.y+0.51,f.z+this.z]
+                        this.y=this.pos[1]+25;this.vel=0;this.glow=0;this.delay=0.25
+                        return
+                    }
+                }else if(this.combo.kicks){
+                    grantBssCoconutCombo(player,this.combo.stacks)
+                }
+            }
             objects.mobs.splice(index,1)
         }
-        
+
         update(){
             
             if(this.delay>0){
@@ -17936,11 +17960,17 @@ function BeeSwarmSimulator(DATA){
                 
             } else {
                 
-                this.vel-=dt*20
+                this.vel-=dt*20*(this.combo?Math.min(3,1+this.combo.kicks*0.06):1)
                 this.glow+=dt
                 this.y+=this.vel*dt
                 
+                if(this.combo){
+                    meshes.cylinder_explosions.instanceData.push(this.pos[0],this.pos[1],this.pos[2],0.1,0.5,1,0.8,this.displaySize,0.001)
+                    if(!this.combo.kicks)meshes.cylinder_explosions.instanceData.push(this.pos[0],this.pos[1]+0.015,this.pos[2],0.3,0.85,1,0.9,0.8,0.001)
+                    textRenderer.addSingle('Combo Coconut x'+this.combo.stacks,[this.pos[0],this.pos[1]+1.5,this.pos[2]],COLORS.whiteArr,0,false,false,0,0.6)
+                }else{
                 meshes.cylinder_explosions.instanceData.push(this.pos[0],this.pos[1],this.pos[2],this.isBigFatBully?1:0,this.isBigFatBully?0:1,0,this.glow*0.75,this.displaySize,0.001)
+                }
                 meshes.explosions.instanceData.push(this.pos[0],this.y,this.pos[2],1,1,1,0.15,-this.displaySize-1,1)
                 meshes.explosions.instanceData.push(this.pos[0],this.y,this.pos[2],0.3*player.isNight,0.1*player.isNight,0,1,this.displaySize,1)
                 
@@ -23415,6 +23445,7 @@ function BeeSwarmSimulator(DATA){
             jumpPower:10,
             criticalChance:0,
             criticalPower:2,
+            coconutComboUniqueConversion:0,
             instantRedConversion:0,
             instantWhiteConversion:0,
             instantBlueConversion:0,
@@ -24333,6 +24364,7 @@ function BeeSwarmSimulator(DATA){
                 
                 out.beeColorAmounts[beeInfo[objects.bees[i].type].color[0]]++
                 
+                applyBssCoconutBeltBeeStats(objects.bees[i],out.currentGear.belt==='coconutBelt')
                 out.defaultStats.convertTotal+=objects.bees[i].convertAmount
 
                 out.defaultStats.attackTotal+=objects.bees[i].attack
@@ -28482,6 +28514,13 @@ function BeeSwarmSimulator(DATA){
                 displayPos:[10.75,14.9,-38.5],
                 displayRot:[0,82,0],
                 displayScale:[1.45,1.45,1.45],
+            },{
+                name:'coconutBelt',
+                slot:'belt',
+                viewMatrix:[14.75,16.4,-41.1,-MATH.HALF_PI,-0.3],
+                displayPos:[10.75,15.3,-41.1],
+                displayRot:[0,82,0],
+                displayScale:[2.4,2.4,2.4],
             }],
             currentIndex:0,message:'Explore Coconut Cave Shop'
         },
@@ -28739,6 +28778,10 @@ function BeeSwarmSimulator(DATA){
         }
     }
 
+    window.bssOwnsGear=function(name){
+        return Object.values(shops).some(shop=>Object.values(shop.items||{}).some(item=>item.name===name&&item.owned))
+    }
+
     shopGearMesh.setMeshFromFunction(function(box,a,cylinder,sphere,applyFinalRotation,c,star){
 
         let num=0
@@ -28764,6 +28807,10 @@ function BeeSwarmSimulator(DATA){
                     } else {
 
                         gear[si.slot][si.name].mesh(box,cylinder,sphere,star,applyFinalRotation,false)
+                        if(si.name==='coconutBelt'){
+                            box(0,-0.47,0,1.5,0.15,1,false,[0.35,0.2,0.08],false,false)
+                            box(0,-0.38,0,1.55,0.04,1.05,false,[0.95,0.85,0.55],false,false)
+                        }
                     }
                 }
             }
@@ -30131,11 +30178,15 @@ function BeeSwarmSimulator(DATA){
                     if(this.backupFunc){
                         
                         this.bee=this.funcParams.bee
-                        this.backupFunc(this)
+                        const previousBee=coconutBeltAbilityBee
+                        coconutBeltAbilityBee=this.funcParams&&this.funcParams.bee
+                        try{this.backupFunc(this)}finally{coconutBeltAbilityBee=previousBee}
                         
                     } else {
                         
-                        this.func(this.funcParams)
+                        const previousBee=coconutBeltAbilityBee
+                        coconutBeltAbilityBee=this.funcParams&&this.funcParams.bee
+                        try{this.func(this.funcParams)}finally{coconutBeltAbilityBee=previousBee}
                     }
                     
                 } else if(this.type==='beesmasBlessing'){
@@ -33055,12 +33106,15 @@ function BeeSwarmSimulator(DATA){
         }
     }
 
+    let coconutBeltAbilityBee=null
     function collectPollen(params){
         
         if(player.pollen>=player.capacity||params.pattern.length<1){return 0}
         
         let f=fieldInfo[params.field||player.fieldIn],x=params.x,z=params.z,total={r:0,b:0,w:0},stackHeight=params.stackHeight||0.425,crit={r:params.alwaysCrit||Math.random()<player.criticalChance?(Math.random()<player.superCritChance?2:1):0,b:params.alwaysCrit||Math.random()<player.criticalChance?(Math.random()<player.superCritChance?2:1):0,w:params.alwaysCrit||Math.random()<player.criticalChance?(Math.random()<player.superCritChance?2:1):0},amount=typeof params.amount==='number'?{r:params.amount,b:params.amount,w:params.amount}:params.amount,pattern=params.pattern,otherAccum={r:0,b:0,w:0},multiplier=params.multiplier?typeof params.multiplier==='number'?{r:params.multiplier,b:params.multiplier,w:params.multiplier}:params.multiplier:{r:1,b:1,w:1},totalHoney=0,totalGoo=0,yOffset=params.yOffset||2
         
+        const beltPollen=bssCoconutBeltPollenMultiplier(player,params.field||player.fieldIn,params.bee||coconutBeltAbilityBee)
+        multiplier.r*=beltPollen;multiplier.b*=beltPollen;multiplier.w*=beltPollen
         multiplier.r*=player.redPollen*(crit.r===0?1:crit.r===1?player.criticalPower:player.criticalPower*player.superCritPower)
         multiplier.b*=player.bluePollen*(crit.b===0?1:crit.b===1?player.criticalPower:player.criticalPower*player.superCritPower)
         multiplier.w*=player.whitePollen*(crit.w===0?1:crit.w===1?player.criticalPower:player.criticalPower*player.superCritPower)
@@ -33070,6 +33124,8 @@ function BeeSwarmSimulator(DATA){
         instantConversion.r=crit.r===2?1:instantConversion.r
         instantConversion.w=crit.w===2?1:instantConversion.w
         instantConversion.b=crit.b===2?1:instantConversion.b
+        const uniqueConversion=player.coconutComboUniqueConversion||0
+        for(const color of ['r','b','w'])instantConversion[color]=1-(1-instantConversion[color])*(1-uniqueConversion)
         instantConversion.r = Math.min(instantConversion.r, 0.99999)
         instantConversion.w = Math.min(instantConversion.w, 0.99999)
         instantConversion.b = Math.min(instantConversion.b, 0.99999)
@@ -34261,6 +34317,7 @@ function BeeSwarmSimulator(DATA){
                 }
             }
             
+            applyBssCoconutComboStats(player)
             player.convertTotal*=player.convertRate
             player.attackTotal=(player.attackTotal+(player.beeColorAmounts.r*player.redBeeAttack)+(player.beeColorAmounts.b*player.blueBeeAttack)+(player.beeColorAmounts.w*player.whiteBeeAttack))*player.beeAttack
             
@@ -34859,6 +34916,7 @@ function BeeSwarmSimulator(DATA){
         textRenderer.draw()
         
         updateBssRates(player)
+        updateBssCoconutBeltHud(player)
         player.updateUI()
         
         user.update()
@@ -35454,4 +35512,82 @@ function normalizeBssEffectVolumes(value){
 function bssEffectVolume(settings,name,gain){
     if(settings.muted)return 0
     return Math.max(0,Math.min(1,settings.effects*gain*(settings.effectVolumes[name]??1)))
+}
+
+
+// Coconut Belt helpers; the local game supports solo juggling only.
+function beginBssComboCoconut(player,isEnemy){
+    if(isEnemy||player.currentGear.belt!=='coconutBelt')return null
+    const count=Math.max(0,Math.floor(Number(player.extraInfo.coconutBeltDrops)||0))+1
+    player.extraInfo.coconutBeltDrops=count%40
+    return count%40===0?{stacks:0,kicks:0,lastField:null,colorHistory:{},lockedField:null}:null
+}
+function bssComboFieldColor(field){
+    const c=field.generalColorComp
+    if(c.r>=0.7)return 'red'
+    if(c.b>=0.7)return 'blue'
+    if(c.w>=0.7)return 'white'
+    return 'mixed'
+}
+function advanceBssCoconutCombo(combo,field,color){
+    let bonus=1
+    if(combo.lastField&&combo.lastField!==field)bonus++
+    if(combo.kicks&&combo.lastColor!==color){
+        const previous=combo.colorHistory[color]
+        bonus+=Math.min(4,previous===undefined?4:Math.max(1,combo.kicks-previous))
+    }
+    combo.stacks=Math.min(100,combo.stacks+bonus)
+    combo.kicks++
+    combo.lastField=field;combo.lastColor=color;combo.colorHistory[color]=combo.kicks
+    return combo.stacks
+}
+function grantBssCoconutCombo(player,stacks,now=Date.now()){
+    const old=player.extraInfo.coconutCombo
+    const active=old&&old.expiresAt>now?old.stacks:0
+    player.extraInfo.coconutCombo={stacks:Math.min(100,Math.max(active,stacks)),expiresAt:now+30000}
+}
+function bssCoconutComboBonuses(stacks){
+    const n=Math.max(1,Math.min(100,stacks)),t=(n-1)/99
+    return {pollen:1.2+0.8*t,color:1+0.005*n,attack:1+0.005*n,honey:1+0.005*n,unique:0.25+0.5*t}
+}
+function applyBssCoconutComboStats(player,now=Date.now()){
+    const buff=player.extraInfo.coconutCombo
+    if(!buff||buff.expiresAt<=now)return
+    const b=bssCoconutComboBonuses(buff.stacks)
+    for(const color of ['red','blue','white'])player[color+'Pollen']*=b.pollen*b.color
+    player.beeAttack*=b.attack;player.honeyFromTokens*=b.honey
+    player.coconutComboUniqueConversion=b.unique
+}
+function applyBssCoconutBeltBeeStats(bee,equipped){
+    const convert=equipped?120:0,attack=equipped?1:0
+    bee.convertAmount+=convert-(bee.coconutBeltConvertBonus||0)
+    bee.attack+=attack-(bee.coconutBeltAttackBonus||0)
+    bee.coconutBeltConvertBonus=convert;bee.coconutBeltAttackBonus=attack
+}
+function bssCoconutBeltPollenMultiplier(player,field,bee){
+    if(player.currentGear.belt!=='coconutBelt')return 1
+    return (field==='CoconutField'?1.1:1)*(bee&&bee.gifted?1.1:1)
+}
+function updateBssCoconutBeltHud(player){
+    let state=window.bssCoconutBeltHud
+    const now=Date.now(),buff=player.extraInfo.coconutCombo
+    const active=buff&&buff.expiresAt>now
+    const equipped=player.currentGear.belt==='coconutBelt'
+    if(!state){
+        if(!active&&!equipped)return
+        const panel=document.createElement('div')
+        panel.style.cssText='position:fixed;bottom:12px;left:12px;z-index:99999;background:#fff4cb;color:#302508;border:2px solid #b58a15;border-radius:8px;padding:7px 10px;font:13px Arial;pointer-events:none;line-height:1.5'
+        document.body.appendChild(panel)
+        state=window.bssCoconutBeltHud={panel,last:0}
+    }
+    state.panel.style.display=active||equipped?'block':'none'
+    if(now-state.last<200)return
+    state.last=now
+    let text=equipped?'Combo Coconuts: '+(player.extraInfo.coconutBeltDrops||0)+'/40':''
+    if(active){
+        const b=bssCoconutComboBonuses(buff.stacks)
+        text+=(text?' | ':'')+'Coconut Combo x'+buff.stacks+' ('+Math.ceil((buff.expiresAt-now)/1000)+'s)'
+        state.panel.title='x'+b.pollen.toFixed(2)+' pollen; x'+b.color.toFixed(2)+' red/blue/white pollen; x'+b.attack.toFixed(2)+' bee attack; x'+b.honey.toFixed(2)+' honey from tokens; '+Math.round(b.unique*100)+'% unique instant conversion'
+    }else state.panel.title='Every 40 player-spawned coconuts creates a Combo Coconut. Catch to juggle; max 50 catches. Combo buff lasts 30 seconds.'
+    state.panel.textContent=text
 }
