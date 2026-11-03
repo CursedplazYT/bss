@@ -1,4 +1,5 @@
-function main(){
+async function main(){
+    if(window.bssVisualAssets)await window.bssVisualAssets.ready
     createBssAudio()
     createBssGraphics()
 
@@ -644,6 +645,11 @@ function BeeSwarmSimulator(DATA){
         itemSVGCode[name]='<svg style="pointer-events:none;width:70px;height:70px;transform:SCALE">'+(itemSVGCode[name][itemSVGCode[name].length-1]).substr(0,itemSVGCode[name][itemSVGCode[name].length-1].indexOf('</svg>'))+'<title>'+MATH.doGrammar(name)+'</title></svg>'
     }
 
+    // Keep inventory quantities above the image; hotbar templates contain artwork only.
+    for(const id of Object.keys(window.bssVisualAssets?.paths||{})){
+        const image=document.getElementById(id)?.querySelector('image')
+        if(image)itemSVGCode[id]='<svg style="pointer-events:none;width:70px;height:70px;transform:SCALE">'+image.outerHTML+'<title>'+MATH.doGrammar(id)+'</title></svg>'
+    }
     for(let i in hotbarSlots){
         
         hotbarSlots[i].onmousedown=function(){
@@ -21305,6 +21311,7 @@ function BeeSwarmSimulator(DATA){
         gl.generateMipmap(gl.TEXTURE_2D)
         
         window.textures_effects(tex_ctx)
+        if(window.bssVisualAssets)window.bssVisualAssets.paintEffects(tex_ctx,items)
         out.effects=gl.createTexture()
         gl.bindTexture(gl.TEXTURE_2D,out.effects)
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1024,2048,0,gl.RGBA,gl.UNSIGNED_BYTE,tex_ctx.getImageData(0,0,1024,2048))
@@ -23781,6 +23788,7 @@ function BeeSwarmSimulator(DATA){
             out.viewMatrixToChange=shops[out.currentShop].items[shops[out.currentShop].currentIndex].viewMatrix
             out.viewMatrixCopy=out.viewMatrix.slice()
             out.easeAmount=0
+            window.bssVisualAssets&&window.bssVisualAssets.showShopArt(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name,shopUI)
             itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)
             let s=Math.min((itemName.innerHTML.indexOf('Partridge')>-1?23:20)/itemName.innerHTML.length,1)*18
             itemName.style.fontSize=s+'px'
@@ -23832,7 +23840,8 @@ function BeeSwarmSimulator(DATA){
                 shops[out.currentShop].currentIndex=(shops[out.currentShop].currentIndex+shops[out.currentShop].items.length-1)%shops[out.currentShop].items.length
                 out.viewMatrixToChange=shops[out.currentShop].items[shops[out.currentShop].currentIndex].viewMatrix
                 out.easeAmount=0
-                itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)+(incre>1?' x'+MATH.abvNumber(incre+''):'')
+                window.bssVisualAssets&&window.bssVisualAssets.showShopArt(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name,shopUI)
+            itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)+(incre>1?' x'+MATH.abvNumber(incre+''):'')
                 let s=Math.min((itemName.innerHTML.indexOf('Partridge')>-1?23:20)/itemName.innerHTML.length,1)*18
                 itemName.style.fontSize=s+'px'
                 itemName.innerHTML='<div style="transform:translate(0px,'+(19-s)+'px)">'+itemName.innerHTML+'</div>'
@@ -23883,7 +23892,8 @@ function BeeSwarmSimulator(DATA){
                 shops[out.currentShop].currentIndex=(shops[out.currentShop].currentIndex+1)%shops[out.currentShop].items.length
                 out.viewMatrixToChange=shops[out.currentShop].items[shops[out.currentShop].currentIndex].viewMatrix
                 out.easeAmount=0
-                itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)+(incre>1?' x'+MATH.abvNumber(incre+''):'')
+                window.bssVisualAssets&&window.bssVisualAssets.showShopArt(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name,shopUI)
+            itemName.innerHTML=MATH.doGrammar(shops[out.currentShop].items[shops[out.currentShop].currentIndex].name)+(incre>1?' x'+MATH.abvNumber(incre+''):'')
                 let s=Math.min((itemName.innerHTML.indexOf('Partridge')>-1?23:20)/itemName.innerHTML.length,1)*18
 
                 itemName.style.fontSize=s+'px'
@@ -27596,6 +27606,8 @@ function BeeSwarmSimulator(DATA){
         NPCs[i].dialogueIndex_savable=0
         NPCs[i].dialogueIndex_beesmas_savable=0
     }
+
+    if(window.installBssGearVisuals)window.installBssGearVisuals(gear)
 
     let shops={
 
