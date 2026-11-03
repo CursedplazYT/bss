@@ -730,13 +730,13 @@ window.playerGear={
                 stats.whiteFieldCapacity*=1.75
                 stats.goo*=1.75
                 stats.instantWhiteConversion=window.applyPercentage(stats.instantWhiteConversion,0.25)
-                stats.redBeeAbilityRate*=1.2
-                stats.blueBeeAbilityRate*=1.2
-                stats.whiteBeeAbilityRate*=1.2
+                stats.redBeeAbilityRate*=2
+                stats.blueBeeAbilityRate*=2
+                stats.whiteBeeAbilityRate*=2
                 stats.bluePollen*=1.35
                 stats.whitePollen*=1.35
                 stats.redPollen*=1.35
-                stats.whitePollen*=1.5
+                stats.whitePollen*=2.5
                 stats.honeyFromTokens*=1.5
                 stats.convertRate*=1.75
                 stats.defense+=0.3
@@ -744,7 +744,7 @@ window.playerGear={
                 player.addEffect('coinScatterPassive')
 
             },
-            desc:'The offical mask of a gummy soldier.<br><br>x1.75 goo<br>x2 capacity<br>x1.75 white field capacity<br>x1.5 white pollen<br>x1.35 pollen<br>+25% instant white conversion<br>x1.5 honey from tokens<br>x1.75 convert rate<br>+30% defense<br>x1.2 bee ability rate<br>+Passive: Gummy Morph<br>+Passive: Coin Scatter',
+            desc:'The offical mask of a gummy soldier.<br><br>x1.75 goo<br>x2 capacity<br>x1.75 white field capacity<br>x2.5 white pollen<br>x1.35 pollen<br>+25% instant white conversion<br>x1.5 honey from tokens<br>x1.75 convert rate<br>+30% defense<br>x2 bee ability rate<br>+Passive: Gummy Morph<br>+Passive: Coin Scatter',
             cost:['5000000000 honey','150 glue','75 enzymes','75 oil','75 glitter'],
         },
         
@@ -769,21 +769,21 @@ window.playerGear={
                 
                 stats.capacityMultiplier*=3
                 stats.blueFieldCapacity*=1.75
-                stats.bluePollen*=1.5
+                stats.bluePollen*=2.5
                 stats.bluePollen*=1.35
                 stats.whitePollen*=1.35
                 stats.redPollen*=1.35
                 stats.convertRate*=2
                 stats.convertRateAtHive*=2
                 stats.bubblePollen*=2
-                stats.redBeeAbilityRate*=1.2
-                stats.blueBeeAbilityRate*=1.2
-                stats.whiteBeeAbilityRate*=1.2
+                stats.redBeeAbilityRate*=2
+                stats.blueBeeAbilityRate*=2
+                stats.whiteBeeAbilityRate*=2
                 stats.defense+=0.35
                 player.addEffect('diamondDrainPassive')
                 player.addEffect('bubbleBombsPassive')
             },
-            desc:'Proudly show off your extreme wealth to the world. Shine so brightly that others will complain.<br><br>x3 capacity<br>x1.75 blue field capacity<br>x1.5 blue pollen<br>x1.35 pollen<br>x2 convert rate<br>x2 convert rate at hive<br>x2 bubble pollen<br>+35% defense<br>x1.2 bee ability rate<br>+Passive: Diamond Drain<br>+Passive: Bubble Bombs',
+            desc:'Proudly show off your extreme wealth to the world. Shine so brightly that others will complain.<br><br>x3 capacity<br>x1.75 blue field capacity<br>x2.5 blue pollen<br>x1.35 pollen<br>x2 convert rate<br>x2 convert rate at hive<br>x2 bubble pollen<br>+35% defense<br>x2 bee ability rate<br>+Passive: Diamond Drain<br>+Passive: Bubble Bombs',
             cost:['5000000000 honey','250 blueExtract','1 diamondEgg','75 glitter','100 oil'],
         },
         
@@ -817,7 +817,7 @@ window.playerGear={
                 player.addEffect('xFlamePassive')
                 player.addEffect('ignitePassive')
             },
-            desc:'Embrace hate to take on the form of a Demon Bee. Become both extremely unpleasant and powerful.<br><br>x2 capacity<br>x1.75 red field capacity<br>x1.75 red pollen<br>+50% instant flame conversion<br>x2 flame pollen<br>x1.25 bee attack<br>+35% defense<br>+20% bee ability rate<br>+Passive: X Flame<br>+Passive: Ignite',
+            desc:'Embrace hate to take on the form of a Demon Bee. Become both extremely unpleasant and powerful.<br><br>x2 capacity<br>x1.5 red field capacity<br>x2.5 red pollen<br>+50% instant flame conversion<br>x2 flame pollen<br>x1.25 bee attack<br>+35% defense<br>x2 bee ability rate<br>+Passive: X Flame<br>+Passive: Ignite',
             cost:['5000000000 honey','350 stinger','250 redExtract','100 enzymes','75 glue'],
         },
     },
@@ -1203,6 +1203,10 @@ window.playerGear={
             applyStats:function(stats,player){
                 
                 stats.capacity+=3500000
+                stats.redFieldCapacity*=20
+                stats.blueFieldCapacity*=20
+                stats.whiteFieldCapacity*=20
+                if(player.currentGear.mask==='gummyMask')stats.goo*=3
                 stats.convertRate*=5
                 stats.instantRedConversion=window.applyPercentage(stats.instantRedConversion,0.15)
                 stats.instantBlueConversion=window.applyPercentage(stats.instantBlueConversion,0.15)
@@ -1220,7 +1224,7 @@ window.playerGear={
                 player.addEffect('inspireCoconutsPassive')
                 player.addEffect('emergencyCoconutShieldPassive')
             },
-            desc:'A back-mounted coconut that protects you during emergencies.<br><br>+2,500,000 capacity<br>x5 convert rate<br>+15% instant conversion<br>+10% instant white conversion<br>x1.25 pollen<br>x1.25 white pollen<br>+2 bee attack<br>+10% defense<br>x1.1 honey at hive<br>+Passive: Emergengy Coconut Shield<br>+Passive: Inspire Coconuts',
+            desc:'A back-mounted coconut that protects you during emergencies.<br><br>+3,500,000 capacity<br>x20 red, blue and white field capacity<br>x3 goo with Gummy Mask<br>x5 convert rate<br>+15% instant conversion<br>+10% instant white conversion<br>x1.25 pollen<br>x1.25 white pollen<br>+2 bee attack<br>+10% defense<br>x1.1 honey at hive<br>+Passive: Emergengy Coconut Shield<br>+Passive: Inspire Coconuts',
             cost:['20000000000 honey','75 tropicalDrink','100 redExtract','100 blueExtract'],
         }
     },
