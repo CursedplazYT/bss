@@ -19413,7 +19413,7 @@ function BeeSwarmSimulator(DATA){
 
     function choosePuffDestination(field,candidates){
         const available=candidates.filter(c=>puffFieldCount(c[0])<10)
-        return chooseBssPuffDestination(available)
+        return chooseBssPuffDestination(available,Math.random,field)
     }
 
     function spawnPuffshroom(field,x,z,life,level,type,prevFields){
@@ -35401,9 +35401,18 @@ function migrateBssBond(bond){
 function hasBssWhiteBoost(player){
     return player.currentGear.backpack==='coconutCanister'&&player.currentGear.mask==='gummyMask'
 }
-function chooseBssPuffDestination(candidates,random=Math.random){
+function chooseBssPuffDestination(candidates,random=Math.random,field=null){
     if(!candidates.length)return null
     const favored=new Set(['StrawberryField','RoseField','PumpkinPatch','CactusField','PineTreeForest'])
+    // Favor staying only in the five requested fields. Capacity filtering happens first.
+    if(favored.has(field)){
+        const same=candidates.find(c=>c[0]===field)
+        if(same){
+            const others=candidates.filter(c=>c[0]!==field)
+            if(!others.length||random()<0.8)return same
+            candidates=others
+        }
+    }
     const weight=c=>favored.has(c[0])?5:1
     let roll=random()*candidates.reduce((n,c)=>n+weight(c),0)
     for(const c of candidates){roll-=weight(c);if(roll<0)return c}
