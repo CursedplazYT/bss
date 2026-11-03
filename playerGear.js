@@ -944,6 +944,28 @@ window.playerGear={
             },
             desc:'Drape these petals about your waist to harness unlimited flower power.<br><br>+300,000 capacity<br>x2 capacity<br>x2 loot luck<br>x1.8 convert rate<br>x1.5 honey from tokens<br>+2 white bee attack<br>x1.5 white bomb pollen<br>x1.25 bee energy<br>+Passive: Petal Storm',
             cost:['15000000000 honey','15 starJelly','50 glitter','75 glue','1 spiritPetal'],
+        },
+        coconutBelt:{
+            mesh:function(box,cylinder,sphere){
+                box(0,-0.1,0,0.94,0.2,0.6,false,[0.22,0.12,0.04])
+                box(0,-0.1,0.31,0.96,0.16,0.07,false,[0.95,0.9,0.7])
+                box(-0.32,-0.1,0.36,0.25,0.09,0.06,false,[0.85,0.08,0.06])
+                box(0.32,-0.1,0.36,0.25,0.09,0.06,false,[0.1,0.35,0.9])
+                sphere(0,-0.08,0.43,0.245,2,0.5,0.3,0.08)
+                sphere(0,-0.08,0.49,0.195,2,0.98,0.94,0.78)
+                sphere(-0.065,-0.02,0.67,0.035,1,0.15,0.08,0.02)
+                sphere(0.065,-0.02,0.67,0.035,1,0.15,0.08,0.02)
+                sphere(0,-0.12,0.68,0.035,1,0.15,0.08,0.02)
+            },
+            applyStats:function(stats,player){
+                stats.capacity+=350000
+                stats.capacityMultiplier*=1.75
+                stats.lootLuck*=2.02
+                stats.honeyFromTokens*=2
+                if(window.bssOwnsGear&&window.bssOwnsGear('petalBelt'))player.addEffect('petalStormPassive')
+            },
+            desc:'A coconut buckle for juggling powerful Combo Coconuts.<br><br>+350,000 capacity<br>x1.75 capacity<br>+120 convert amount per bee<br>x2.02 loot luck<br>x2 honey from tokens<br>x1.1 Coconut Field pollen<br>x1.1 pollen from gifted bees<br>+1 attack per bee<br>+Passive: Petal Storm (requires owned Petal Belt)<br>+Passive: Combo Coconuts<br><br>Every 40th player-spawned coconut becomes a Combo Coconut. Catch to juggle up to 50 times, gaining up to 100 stacks of Coconut Combo for 30s. First-catch blue center locks it to that field. Solo juggling is supported.',
+            cost:['7500000000000 honey','500 coconut','1500 tropicalDrink','200 purplePotion','200 hardWax','3 turpentine','3 refreshingVial'],
         }
     },
     
