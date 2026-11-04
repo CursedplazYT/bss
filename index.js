@@ -17879,6 +17879,7 @@ function BeeSwarmSimulator(DATA){
             this.vel=0
             this.displaySize=isBigFatBully?6:4.5
             this.combo=beginBssComboCoconut(player,!!isBigFatBully)
+            this.soloComboPending=!isBigFatBully&&player.currentGear.belt==='coconutBelt'&&(player.extraInfo.coconutComboCatches||0)>=9&&!(player.bssCoconutJuggle&&player.bssCoconutJuggle.active)
             if(this.combo){this.displaySize=3.5;player.addMessage('Combo Coconut! Catch the blue ring to juggle it.')}
         }
         
@@ -17974,7 +17975,7 @@ function BeeSwarmSimulator(DATA){
                 
             } else {
                 
-                this.vel-=dt*20*(this.combo?Math.min(3,1+this.combo.kicks*0.06):1)
+                this.vel-=dt*(this.combo?bssCoconutFallAcceleration(this.combo.stacks):this.soloComboPending?2:20)
                 this.glow+=dt
                 this.y+=this.vel*dt
                 
@@ -19094,6 +19095,7 @@ function BeeSwarmSimulator(DATA){
         update(){
             
             this.life-=dt
+            if(graphics.settings.showGlitches===false)return this.life<=0
             
             for(let i in this.blocks){
 
@@ -34930,7 +34932,7 @@ function BeeSwarmSimulator(DATA){
         textRenderer.draw()
         
         updateBssRates(player)
-        updateBssCoconutBeltHud(player)
+        updateBssCoconutBeltHud(player,user.viewMatrix,width,height)
         player.updateUI()
         
         user.update()
@@ -35356,17 +35358,17 @@ function createBssAudio(){
 
 function createBssGraphics(){
     if(window.bssGraphics)return window.bssGraphics
-    const defaults={flames:1,particles:1,hideSpicyBees:false,explosions:true,trails:true,pollenText:true,showBubbles:true,starOpacity:1,dupeOpacity:1,scale:1}
+    const defaults={flames:1,particles:1,hideSpicyBees:false,explosions:true,trails:true,pollenText:true,showBubbles:true,showGlitches:true,starOpacity:1,dupeOpacity:1,scale:1}
     let settings={...defaults},changed=()=>{},accumulator={flame:0,other:0}
     try{Object.assign(settings,JSON.parse(localStorage.getItem('bss-graphics-settings')||'{}'))}catch(e){}
     for(const key of ['flames','particles','scale','starOpacity','dupeOpacity']){
         const n=Number(settings[key]);settings[key]=Number.isFinite(n)?Math.max(key==='scale'?0.4:0,Math.min(1,n)):defaults[key]
     }
-    for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])settings[key]=typeof settings[key]==='boolean'?settings[key]:defaults[key]
+    for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles','showGlitches'])settings[key]=typeof settings[key]==='boolean'?settings[key]:defaults[key]
     const panel=document.createElement('details')
     panel.id='bss-graphics-controls'
     panel.style.cssText='position:fixed;bottom:56px;right:12px;z-index:100001;background:#edf5ff;color:#18283e;border:2px solid #55739b;border-radius:10px;padding:8px;font:14px Arial;max-width:290px;max-height:70vh;overflow:auto;box-shadow:0 2px 10px #0004;user-select:auto'
-    panel.innerHTML='<summary style="cursor:pointer">Graphics</summary><div style="display:grid;gap:9px;padding-top:10px"><button data-low type="button" style="width:auto;height:auto;padding:6px">Chromebook preset</button><button data-reset type="button" style="width:auto;height:auto;padding:6px">Full graphics</button><label>Flame particles <output data-flames-value></output><input data-flames type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Other particles <output data-particles-value></output><input data-particles type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>SSA star opacity <output data-starOpacity-value></output><input data-starOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Dupe token opacity <output data-dupeOpacity-value></output><input data-dupeOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Render resolution <output data-scale-value></output><input data-scale type="range" min="0.4" max="1" step="0.05" style="width:100%"></label><label><input data-showBubbles type="checkbox" style="height:auto"> Show bubbles</label><label><input data-hideSpicyBees type="checkbox" style="height:auto"> Hide Spicy Bee summons</label><label><input data-explosions type="checkbox" style="height:auto"> Decorative explosions</label><label><input data-trails type="checkbox" style="height:auto"> Trails</label><label><input data-pollenText type="checkbox" style="height:auto"> Floating pollen numbers</label><small>Hidden bees and flames still work normally. Lower resolution makes the world less sharp; menus stay sharp. Settings save automatically.</small></div>'
+    panel.innerHTML='<summary style="cursor:pointer">Graphics</summary><div style="display:grid;gap:9px;padding-top:10px"><button data-low type="button" style="width:auto;height:auto;padding:6px">Chromebook preset</button><button data-reset type="button" style="width:auto;height:auto;padding:6px">Full graphics</button><label>Flame particles <output data-flames-value></output><input data-flames type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Other particles <output data-particles-value></output><input data-particles type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>SSA star opacity <output data-starOpacity-value></output><input data-starOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Dupe token opacity <output data-dupeOpacity-value></output><input data-dupeOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Render resolution <output data-scale-value></output><input data-scale type="range" min="0.4" max="1" step="0.05" style="width:100%"></label><label><input data-showBubbles type="checkbox" style="height:auto"> Show bubbles</label><label><input data-hideSpicyBees type="checkbox" style="height:auto"> Hide Spicy Bee summons</label><label><input data-explosions type="checkbox" style="height:auto"> Decorative explosions</label><label><input data-trails type="checkbox" style="height:auto"> Trails</label><label><input data-pollenText type="checkbox" style="height:auto"> Floating pollen numbers</label><label><input data-showGlitches type="checkbox" style="height:auto"> Field glitch effects</label><small>Hidden bees and flames still work normally. Lower resolution makes the world less sharp; menus stay sharp. Settings save automatically.</small></div>'
     document.body.appendChild(panel)
     const audioPanel=document.getElementById('bss-audio-controls')
     if(audioPanel)audioPanel.addEventListener('toggle',()=>{if(audioPanel.open)panel.open=false})
@@ -35378,7 +35380,7 @@ function createBssGraphics(){
             panel.querySelector('[data-'+key+']').value=settings[key]
             panel.querySelector('[data-'+key+'-value]').textContent=Math.round(settings[key]*100)+'%'
         }
-        for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])panel.querySelector('[data-'+key+']').checked=settings[key]
+        for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles','showGlitches'])panel.querySelector('[data-'+key+']').checked=settings[key]
     }
     function commit(){accumulator={flame:0,other:0};persist();changed()}
     for(const key of ['flames','particles','scale','starOpacity','dupeOpacity']){
@@ -35386,8 +35388,8 @@ function createBssGraphics(){
         input.oninput=()=>{panel.querySelector('[data-'+key+'-value]').textContent=Math.round(Number(input.value)*100)+'%';if(key!=='scale'){settings[key]=Number(input.value);commit()}}
         input.onchange=()=>{settings[key]=Number(input.value);commit()}
     }
-    for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles'])panel.querySelector('[data-'+key+']').onchange=e=>{settings[key]=e.target.checked;commit()}
-    panel.querySelector('[data-low]').onclick=()=>{Object.assign(settings,{flames:0.1,particles:0.1,hideSpicyBees:true,explosions:false,trails:false,pollenText:false,showBubbles:false,starOpacity:0.35,dupeOpacity:0.35,scale:0.6});refresh();commit()}
+    for(const key of ['hideSpicyBees','explosions','trails','pollenText','showBubbles','showGlitches'])panel.querySelector('[data-'+key+']').onchange=e=>{settings[key]=e.target.checked;commit()}
+    panel.querySelector('[data-low]').onclick=()=>{Object.assign(settings,{flames:0.1,particles:0.1,hideSpicyBees:true,explosions:false,trails:false,pollenText:false,showBubbles:false,showGlitches:false,starOpacity:0.35,dupeOpacity:0,scale:0.6});refresh();commit()}
     panel.querySelector('[data-reset]').onclick=()=>{Object.assign(settings,defaults);refresh();commit()}
     refresh()
     window.bssGraphics={settings,
@@ -35599,45 +35601,57 @@ function bssCoconutBeltPollenMultiplier(player,field,bee){
     if(player.currentGear.belt!=='coconutBelt')return 1
     return (field==='CoconutField'?1.1:1)*(bee&&bee.gifted?1.1:1)
 }
-function updateBssCoconutBeltHud(player){
+// BSS compact coconut badge v3
+function bssCoconutFallAcceleration(stacks){
+    const n=Math.max(1,Math.min(100,Number(stacks)||1))
+    return 2+0.28*(n-1)
+}
+function updateBssCoconutBeltHud(player,viewMatrix,width,height){
     let state=window.bssCoconutBeltHud
     const now=Date.now(),buff=player.extraInfo.coconutCombo
     const active=!!(buff&&buff.expiresAt>now)
     const equipped=player.currentGear.belt==='coconutBelt'
-    if(!state||state.version!==2){
-        if(state&&state.panel&&state.panel.remove)state.panel.remove()
+    if(!state||state.version!==3){
+        if(state){for(const node of [state.panel,state.svg,state.badge])if(node&&node.remove)node.remove()}
+        const stale=document.getElementById('bssCoconutComboStatus');if(stale&&stale.remove)stale.remove()
         if(!active&&!equipped)return
-        const panel=document.createElement('div')
-        panel.id='bssCoconutComboStatus'
-        panel.style.cssText='position:fixed;bottom:12px;left:12px;z-index:99999;background:#fff4cb;color:#302508;border:2px solid #b58a15;border-radius:8px;padding:7px 10px;font:13px Arial;pointer-events:none;line-height:1.5;white-space:pre-line'
-        document.body.appendChild(panel)
+        const badge=document.createElement('div')
+        badge.id='bssCoconutComboBadge'
+        badge.style.cssText='position:fixed;z-index:99999;display:none;align-items:center;gap:3px;pointer-events:none;transform:translate(-50%,-100%);color:white;font:bold 23px Arial;text-shadow:0 2px 2px #000,1px 0 #000,-1px 0 #000;filter:drop-shadow(0 2px 2px #0007)'
+        badge.innerHTML='<svg width="35" height="35" viewBox="0 0 35 35" aria-hidden="true"><ellipse cx="17.5" cy="17.5" rx="16" ry="13" transform="rotate(35 17.5 17.5)" fill="#86a94a" stroke="#e9f4c9" stroke-width="2"/><ellipse cx="17.5" cy="17.5" rx="12" ry="9" transform="rotate(35 17.5 17.5)" fill="#83542d" stroke="#f6efd5" stroke-width="2"/><circle cx="14" cy="13" r="1.8" fill="#29180a"/><circle cx="21" cy="16" r="1.8" fill="#29180a"/><circle cx="16" cy="21" r="1.8" fill="#29180a"/></svg><span class="comboLabel">x0</span>'
+        document.body.appendChild(badge)
+        // Keep the small charge icon among the existing passive icons.
         const svg=document.createElementNS('http://www.w3.org/2000/svg','svg')
-        svg.id='bssCoconutComboPassive';svg.setAttribute('width','46');svg.setAttribute('height','36');svg.setAttribute('viewBox','0 0 46 36')
-        svg.style.cssText='width:46px;height:36px;vertical-align:middle;cursor:help'
-        svg.innerHTML='<title>Coconut Combo</title><circle cx="17" cy="16" r="14" fill="#147bb9" stroke="#171717" stroke-width="2"/><circle cx="17" cy="16" r="10" fill="#805021"/><circle cx="14" cy="12" r="2" fill="#fff4dc"/><circle cx="20" cy="12" r="2" fill="#fff4dc"/><circle cx="17" cy="19" r="2" fill="#fff4dc"/><rect x="2" y="29" width="42" height="5" rx="2" fill="#34220c"/><rect class="comboCharge" x="2" y="29" width="0" height="5" rx="2" fill="#4fe1ff"/><text class="comboCount" x="45" y="26" text-anchor="end" fill="white" stroke="black" stroke-width=".4" style="font:bold 11px Arial;paint-order:stroke">0/10</text>'
+        svg.id='bssCoconutComboPassive';svg.setAttribute('width','38');svg.setAttribute('height','34');svg.setAttribute('viewBox','0 0 38 34')
+        svg.style.cssText='width:38px;height:34px;vertical-align:middle;cursor:help'
+        svg.innerHTML='<title>Coconut Combo</title><circle cx="16" cy="15" r="13" fill="#3c864b" stroke="#171717" stroke-width="2"/><circle cx="16" cy="15" r="9" fill="#83542d"/><circle cx="13" cy="12" r="1.6" fill="#f6efd5"/><circle cx="20" cy="12" r="1.6" fill="#f6efd5"/><circle cx="16" cy="19" r="1.6" fill="#f6efd5"/><rect x="2" y="29" width="34" height="4" rx="2" fill="#34220c"/><rect class="comboCharge" x="2" y="29" width="0" height="4" rx="2" fill="#4fe1ff"/><text class="comboCount" x="37" y="26" text-anchor="end" fill="white" stroke="black" stroke-width=".4" style="font:bold 10px Arial;paint-order:stroke">0/10</text>'
         const anchor=document.getElementById('coconutHastePassive')||document.getElementById('diamondDrainPassive')
         if(anchor&&anchor.parentNode)anchor.parentNode.appendChild(svg)
-        else{svg.style.position='fixed';svg.style.left='12px';svg.style.bottom='100px';svg.style.zIndex='99999';document.body.appendChild(svg)}
-        state=window.bssCoconutBeltHud={version:2,panel,svg,label:svg.querySelector('.comboCount'),bar:svg.querySelector('.comboCharge'),title:svg.querySelector('title'),last:0,lastText:''}
+        else{svg.style.position='fixed';svg.style.left='12px';svg.style.top='105px';document.body.appendChild(svg)}
+        state=window.bssCoconutBeltHud={version:3,badge,svg,label:badge.querySelector('.comboLabel'),charge:svg.querySelector('.comboCount'),bar:svg.querySelector('.comboCharge'),title:svg.querySelector('title'),last:0}
     }
-    state.panel.style.display=active||equipped?'block':'none'
     state.svg.style.display=active||equipped?'inline-block':'none'
+    const live=player.bssCoconutJuggle
+    const juggling=equipped&&live&&live.active&&now-live.updatedAt<8000&&!player.dead
+    const stacks=juggling?live.stacks:active?buff.stacks:0
+    // Follow the player in screen space; never show behind the camera.
+    let visible=false
+    if(stacks>0&&!player.dead&&viewMatrix&&width>0&&height>0){
+        const p=player.body.position,x=p.x,y=p.y+2.75,z=p.z,m=viewMatrix
+        const cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],cw=m[3]*x+m[7]*y+m[11]*z+m[15]
+        if(cw>0){const sx=(cx/cw+1)*width/2,sy=(1-cy/cw)*height/2;visible=sx>=-50&&sx<=width+50&&sy>=0&&sy<=height+50;if(visible){state.badge.style.left=sx.toFixed(1)+'px';state.badge.style.top=sy.toFixed(1)+'px'}}
+    }
+    state.badge.style.display=visible?'flex':'none'
+    const text='x'+stacks;if(state.label.textContent!==text)state.label.textContent=text
     if(now-state.last<200)return
     state.last=now
     const caught=Math.max(0,Math.min(9,Math.floor(Number(player.extraInfo.coconutComboCatches)||0)))
-    const live=player.bssCoconutJuggle
-    const juggling=equipped&&live&&live.active&&now-live.updatedAt<8000&&!player.dead
-    let text=equipped?'Coconut Combo: '+caught+'/10 catches':'Coconut Combo'
-    text+='\nTotal coconuts caught: '+Math.max(0,Math.floor(Number(player.stats&&player.stats.fallingCoconuts)||0))
-    if(juggling)text+='\nJuggling: '+live.kicks+'/50 catches | '+live.stacks+' stacks'
-    else if(equipped)text+='\n'+(player.fieldIn==='AntField'?'Charge pauses in Ant Field.':'Catch '+(10-caught)+' more to start a combo.')
-    if(active)text+='\nCombo x'+buff.stacks+' | '+Math.ceil((buff.expiresAt-now)/1000)+'s remaining'
-    if(text!==state.lastText){state.panel.textContent=text;state.lastText=text}
-    state.label.textContent=juggling?'x'+live.stacks:caught+'/10'
-    state.bar.setAttribute('width',String(juggling?42:42*caught/10))
-    let tip='Coconut Belt: 10 successful catches start a solo combo. Juggle up to 50 catches. Buff lasts 30 seconds.'
-    if(active){const b=bssCoconutComboBonuses(buff.stacks);tip+=' x'+b.pollen.toFixed(2)+' pollen; x'+b.color.toFixed(2)+' color pollen; x'+b.attack.toFixed(2)+' attack; x'+b.honey.toFixed(2)+' honey from tokens; '+Math.round(b.unique*100)+'% unique instant conversion.'}
-    state.title.textContent=tip;state.panel.title=tip
+    state.charge.textContent=active||juggling?'x'+stacks:caught+'/10'
+    state.bar.setAttribute('width',String(juggling?34:active?34*Math.max(0,Math.min(1,(buff.expiresAt-now)/30000)):34*caught/10))
+    let tip='Coconut Combo: '+caught+'/10 catches. Total caught: '+Math.max(0,Math.floor(Number(player.stats&&player.stats.fallingCoconuts)||0))+'.'
+    if(juggling)tip+=' Juggling '+live.kicks+'/50; '+live.stacks+' stacks.'
+    if(active)tip+=' Buff x'+buff.stacks+': '+Math.ceil((buff.expiresAt-now)/1000)+'s remaining.'
+    state.title.textContent=tip
 }
 
 
