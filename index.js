@@ -17944,17 +17944,18 @@ function BeeSwarmSimulator(DATA){
                     if(!this.combo.kicks&&dx*dx+dz*dz<=0.64)this.combo.lockedField=this.field
                     advanceBssCoconutCombo(this.combo,this.field,bssComboFieldColor(fieldInfo[this.field]))
                     player.bssCoconutJuggle={active:true,kicks:this.combo.kicks,stacks:this.combo.stacks,updatedAt:Date.now()}
+                    gameAudio.setComboActive(true)
                     if(this.combo.kicks>0){
                         const soundStep=(this.combo.kicks-1)%4+1
                         gameAudio.effect('coconutCombo'+soundStep)
                         if(this.combo.kicks%4===0)gameAudio.effect('coconutComboBass'+((this.combo.kicks/4-1)%4+1))
                     }
                     grantBssCoconutCombo(player,this.combo.stacks)
-                    if(this.combo.kicks<50&&!player.dead){
+                    if(!player.dead){
                         this.field=this.combo.lockedField||player.fieldIn
                         const f=fieldInfo[this.field]
-                        this.x=Math.max(1,Math.min(f.width-2,Math.round((player.body.position.x-f.x)+(Math.random()-0.5)*8)))
-                        this.z=Math.max(1,Math.min(f.length-2,Math.round((player.body.position.z-f.z)+(Math.random()-0.5)*8)))
+                        const next=bssNextComboLanding(f,player.body.position.x,player.body.position.z,this.combo.kicks)
+                        this.x=next.x;this.z=next.z
                         this.pos=[f.x+this.x,f.y+0.51,f.z+this.z]
                         this.y=this.pos[1]+25;this.vel=0;this.glow=0;this.delay=bssCoconutComboDelay(this.combo.kicks)
                         return
@@ -17963,7 +17964,7 @@ function BeeSwarmSimulator(DATA){
                     grantBssCoconutCombo(player,this.combo.stacks)
                 }
             }
-            if(this.combo&&player.bssCoconutJuggle)player.bssCoconutJuggle.active=false
+            if(this.combo&&player.bssCoconutJuggle){player.bssCoconutJuggle.active=false;gameAudio.setComboActive(false)}
             objects.mobs.splice(index,1)
         }
 
@@ -35043,7 +35044,8 @@ function createBssAudio(){
     starMusic.preload='none'
     starMusic.loop=true
     let currentStar='',hallLatched=false,sessionReady=false
-    // BSS priority mix v7: restore levels when the last priority clip ends.
+    let comboChainUntil=0
+    // Keep priority across the entire chain, including gaps between catch cues.
     let unlocked=false,current='',desired='wax',failed='',lastTick=-Infinity
     const gains={music:1,star:0},fades={}
     let fadeFrame=0,pendingMusic='',musicPhase='',starWaiting=false,lastMusicContext=null
@@ -35134,9 +35136,9 @@ function createBssAudio(){
     effectControls.appendChild(effectList)
     panel.querySelector('[data-status]').parentElement.appendChild(effectControls)
     function priorityMix(){
-        const combo=Array.from(playing).some(a=>a.bssEffect.startsWith('coconutCombo')&&!a.paused&&bssEffectVolume(settings,a.bssEffect,a.bssGain)>0)
+        const combo=performance.now()<comboChainUntil&&settings.effects>0||Array.from(playing).some(a=>a.bssEffect.startsWith('coconutCombo')&&!a.paused&&bssEffectVolume(settings,a.bssEffect,a.bssGain)>0)
         const star=!!(currentStar&&settings.stars>0&&!settings.muted)
-        return {music:combo?0.03:star?0.06:1,star:combo?0.18:1,effects:combo?0.03:star?0.08:1}
+        return {music:combo?0:star?0.06:1,star:combo?0:1,effects:combo?0.03:star?0.08:1}
     }
     function musicVolume(){
         if(settings.muted)return 0
@@ -35172,8 +35174,8 @@ function createBssAudio(){
         if(channel.paused){const result=channel.play();if(result)result.catch(()=>{})}
     }
     function resume(){
-        playChannel(music,musicPhase==='waiting'&&musicVolume()>0)
-        if(currentStar)playChannel(starMusic,starWaiting&&settings.stars>0)
+        playChannel(music,true)
+        if(currentStar)playChannel(starMusic,true)
     }
     music.addEventListener('playing',()=>{
         if(musicPhase==='waiting'){
@@ -35357,6 +35359,7 @@ function createBssAudio(){
     }
 
     window.bssAudio={
+        setComboActive(active){comboChainUntil=active?performance.now()+8000:0;volumes();resume()},
         effect,
         lootSpawn(type,source){
             const mobDrop=!source||/ladybug|rhino|mantis|scorpion|werewolf|spider|beetle|bear|chick|crab|snail|aphid|vicious|windy|stick ?bug|puffshroom|mob/i.test(source)
@@ -35364,10 +35367,10 @@ function createBssAudio(){
         },
         lootPickup(type){if(sessionReady)effect(type==='honey'?'honeyPickup':'itemPickup')},
         token(type){const name=tokenSounds[type];if(name)effect(name)},
-        tick(p,beesmas,triggers,time,fields,starTrack){lastMusicContext={p,beesmas,triggers,fields};sessionReady=true;if(time-lastTick<0.2)return;lastTick=time;setMusic(choose(p,beesmas,triggers,fields));setStar(starTrack)},
+        tick(p,beesmas,triggers,time,fields,starTrack){lastMusicContext={p,beesmas,triggers,fields};sessionReady=true;if(time-lastTick<0.2)return;lastTick=time;setMusic(choose(p,beesmas,triggers,fields));setStar(starTrack);const live=p.bssCoconutJuggle;if(!live||!live.active||p.dead||p.currentGear&&p.currentGear.belt!=='coconutBelt')comboChainUntil=0;volumes()},
         newBee(rarity){if(sessionReady&&rarity==='legendary')effect('legendDiscover')},
         levelUp(){if(sessionReady)effect('levelUp')},
-        reset(){lastTick=-Infinity;hallLatched=false;sessionReady=false;setStar('');for(const a of playing){a.pause();a.removeAttribute('src');a.load()}playing.clear();setMusic('wax')},
+        reset(){comboChainUntil=0;lastTick=-Infinity;hallLatched=false;sessionReady=false;setStar('');for(const a of playing){a.pause();a.removeAttribute('src');a.load()}playing.clear();setMusic('wax')},
         setMusic
     }
     save()
@@ -35665,7 +35668,7 @@ function updateBssCoconutBeltHud(player){
         text+='\nx'+fmt(b.attack)+' bee attack'
         text+='\nx'+fmt(b.honey)+' honey from tokens'
         text+='\n'+fmt(b.unique*100)+'% unique instant conversion'
-        text+='\n'+(juggling?'Juggling: '+live.kicks+'/50 catches':'Juggling ended; earned buff remains until the timer expires.')
+        text+='\n'+(juggling?'Juggling: '+live.kicks+' catches (endless)':'Juggling ended; earned buff remains until the timer expires.')
     }else text+='\n'+caught+'/10 catches until the next combo.\nNo Coconut Combo bonuses active.'
     state.tooltip.textContent=text
     state.icon.setAttribute('aria-label',text)
@@ -35698,7 +35701,7 @@ function registerBssCoconutBelt(gear){
                 stats.honeyFromTokens*=2
                 if(window.bssOwnsGear&&window.bssOwnsGear('petalBelt'))player.addEffect('petalStormPassive')
             },
-            desc:'A coconut buckle for juggling powerful Combo Coconuts.<br><br>+350,000 capacity<br>x1.75 capacity<br>+120 convert amount per bee<br>x2.02 loot luck<br>x2 honey from tokens<br>x1.1 Coconut Field pollen<br>x1.1 pollen from gifted bees<br>+1 attack per bee<br>+Passive: Petal Storm (requires owned Petal Belt)<br>+Passive: Combo Coconuts<br><br>Every 10 successful catches with this belt starts a solo Combo Coconut. Catch to juggle up to 50 times, gaining up to 100 stacks of Coconut Combo for 30s. First-catch blue center locks it to that field. Solo juggling is supported.',
+            desc:'A coconut buckle for juggling powerful Combo Coconuts.<br><br>+350,000 capacity<br>x1.75 capacity<br>+120 convert amount per bee<br>x2.02 loot luck<br>x2 honey from tokens<br>x1.1 Coconut Field pollen<br>x1.1 pollen from gifted bees<br>+1 attack per bee<br>+Passive: Petal Storm (requires owned Petal Belt)<br>+Passive: Combo Coconuts<br><br>Every 10 successful catches with this belt starts a solo Combo Coconut. Keep catching to juggle indefinitely, gaining up to 100 stacks of Coconut Combo for 30s. First-catch blue center locks it to that field. Solo juggling is supported.',
             cost:['7500000000000 honey','500 coconut','1500 tropicalDrink','200 purplePotion','200 hardWax','3 turpentine','3 refreshingVial'],
         }
     return gear.belt.coconutBelt
@@ -35720,3 +35723,15 @@ function drawBssCoconutBelt(box,cylinder,sphere){
 }
 
 // BSS audible Coconut Combo mix v6: normalized clips and temporary audio ducking.
+
+// BSS endless combo v8; same normal fall speed, wider landing separation.
+function bssNextComboLanding(f,px,pz,catches,random=Math.random){
+    const minDistance=Math.min(10,6+Math.max(0,catches-1)*0.12)
+    const candidates=[];let farthest=null,best=-1
+    for(let x=1;x<=f.width-2;x++)for(let z=1;z<=f.length-2;z++){
+        const d=Math.hypot(f.x+x-px,f.z+z-pz)
+        if(d>best){best=d;farthest={x,z}}
+        if(d>=minDistance&&d<=minDistance+3)candidates.push({x,z})
+    }
+    return candidates.length?candidates[Math.min(candidates.length-1,Math.floor(random()*candidates.length))]:farthest||{x:Math.max(0,(f.width-1)/2),z:Math.max(0,(f.length-1)/2)}
+}
