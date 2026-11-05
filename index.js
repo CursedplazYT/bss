@@ -21969,7 +21969,7 @@ function BeeSwarmSimulator(DATA){
             cooldown:0.4,
             mesh:function(box,cylinder,sphere,star){
                 // Silhouette traced from the supplied side view, fitted to the original grip.
-                const point=([u,v])=>[0.55+((u-460)*-0.39+(v-370)*-0.92)*0.0065,0.55+((u-460)*-0.92+(v-370)*0.39)*0.0065]
+                const point=([u,v])=>[0.55+((u-460)*1.18*-0.39+(v-370)*1.30*-0.92)*0.0065,0.55+((u-460)*1.18*-0.92+(v-370)*1.30*0.39)*0.0065]
                 const shape=(outline,thickness,color)=>box.bssDarkScythePrism(outline.map(point),thickness,color)
                 const black=[0.025,0.022,0.03]
                 shape([[480,20],[401,198],[526,128],[428,224],[443,240],[436,252],[454,306],[448,312],[468,365],[451,373],[415,319],[408,310],[404,314],[390,274],[380,263],[344,263],[282,292],[243,320],[224,354],[205,436],[195,340],[207,312],[225,290],[352,222],[360,185]],0.17,black)
@@ -22026,18 +22026,15 @@ function BeeSwarmSimulator(DATA){
                 
                 toolParticle=0.05
                 
-                let x=player.bodyDir[0],y=1.5,z=player.bodyDir[2]*0
-                
-                x+=-player.bodyDir[2]*1.2
-                z+=player.bodyDir[0]*1.2
-                
-                let r=Math.random()*2.5
-                
-                x+=player.bodyDir[0]*r
-                y-=r*0.25
-                z+=player.bodyDir[2]*r
-                
-                ParticleRenderer.add({x:player.body.position.x+x,y:player.body.position.y+y,z:player.body.position.z+z,vx:-player.bodyDir[2]*2,vy:1.75,vz:player.bodyDir[0]*2,grav:0,size:MATH.random(70,120),col:[1,0,Math.random()],life:1,rotVel:MATH.random(-3,3),alpha:4.5})
+                // Emit from the enlarged blade itself, including its current swing.
+                const edge=[[381,248],[343,284],[291,312],[254,348],[231,396],[213,457]]
+                const t=Math.random()*(edge.length-1),i=Math.floor(t),f=t-i
+                const u=edge[i][0]+(edge[Math.min(i+1,edge.length-1)][0]-edge[i][0])*f
+                const v=edge[i][1]+(edge[Math.min(i+1,edge.length-1)][1]-edge[i][1])*f
+                const local=[-0.55,0.55+((u-460)*1.18*-0.39+(v-370)*1.30*-0.92)*0.0065,0.55+((u-460)*1.18*-0.92+(v-370)*1.30*0.39)*0.0065]
+                vec3.transformQuat(local,local,quat.fromEuler([],0,0,30))
+                vec3.transformMat4(local,local,player.toolMatrix)
+                ParticleRenderer.add({x:local[0],y:local[1],z:local[2],vx:-player.bodyDir[2]*2,vy:1.75,vz:player.bodyDir[0]*2,grav:0,size:MATH.random(70,120),col:[1,0,Math.random()],life:1,rotVel:MATH.random(-3,3),alpha:4.5})
             },
             desc:'Swipe through flames to unlock their dark potential. Ensue dark chaos in fields and refuel burning flames, collecting more pollen and dealing more damage. Tend a destructive field of violet fire to enhance your Super-Crit power and Instant Red Conversion.',
             cost:['2500000000000 honey','1000 redExtract','200 stinger','50 hardWax','15 superSmoothie']
@@ -26645,7 +26642,10 @@ function BeeSwarmSimulator(DATA){
             
             out.toolRot+=dt*10
             
+            // Twelve percent taller visually, with the feet kept at ground level.
+            out.modelMatrix[13]+=0.06
             mat4.copy(out.toolMatrix,out.modelMatrix)
+            mat4.scale(out.modelMatrix,out.modelMatrix,[1,1.12,1])
             mat4.rotateX(out.toolMatrix,out.toolMatrix,Math.max(0,(-Math.abs(out.toolRot-2)+2)*MATH.QUATER_PI))
             
             if(out.viewMatrixToChange){
@@ -35853,4 +35853,4 @@ function bssMountToolbarControl(panel,label){
     for(const event of ['pointerdown','pointerup','click','keyup','touchstart','touchend'])panel.addEventListener(event,e=>e.stopPropagation())
 }
 
-console.info('BSS build: audited-loader-v4');
+console.info('BSS build: scythe-size-v5');
