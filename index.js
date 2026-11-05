@@ -21262,6 +21262,24 @@ function BeeSwarmSimulator(DATA){
                 }
             }
             
+            // Dedicated convex-prism helper used only by the Dark Scythe model.
+            if(!this.isStatic)addBox.bssDarkScythePrism=function(points,thickness,color){
+                const q=quat.fromEuler([],0,0,30),layers=[]
+                for(const x of [-0.55-thickness/2,-0.55+thickness/2]){
+                    layers.push(points.map(p=>vec3.transformMat4([],vec3.transformQuat([],[x,p[0],p[1]],q),DIS.matrix)))
+                }
+                const triangle=(a,b,c)=>{
+                    const normal=vec3.normalize([],vec3.cross([],vec3.sub([],b,a),vec3.sub([],c,a))),base=verts.length/9
+                    for(const p of [a,b,c])verts.push(...p,...color,...normal)
+                    index.push(base,base+1,base+2)
+                }
+                // Make winding consistent for either polygon direction.
+                let area=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];area+=a[0]*b[1]-b[0]*a[1]}
+                if(area<0)for(const layer of layers)layer.reverse()
+                for(let i=1;i<points.length-1;i++){triangle(layers[1][0],layers[1][i],layers[1][i+1]);triangle(layers[0][0],layers[0][i+1],layers[0][i])}
+                for(let i=0;i<points.length;i++){const j=(i+1)%points.length;triangle(layers[0][i],layers[0][j],layers[1][j]);triangle(layers[0][i],layers[1][j],layers[1][i])}
+            }
+
             func(addBox,addHiveSlot,addCylinder,addSphere,applyFinalRotation,addGiftedRing,addStar,addLimbBox,addLimbCylinder)
             this.setMesh(verts,index)
         }
@@ -21940,19 +21958,30 @@ function BeeSwarmSimulator(DATA){
             collectAmount:20,
             cooldown:0.4,
             mesh:function(box,cylinder,sphere,star){
-                
-                box(-0.55,0.75,0.55,0.15,2.2,0.15,[0,0,0],[0.1,0,0],[0,0,30])
-                box(-0.55,1.6,1.1,0.15,0.6,1.2,[0,0,0],[0.1,0,0],[0,0,30])
-                box(-0.55,1.5,2,0.15,0.5,1,[20,0,0],[0.1,0,0],[0,0,30])
-                box(-0.55,1.2,2.6,0.15,0.35,1,[40,0,0],[0.1,0,0],[0,0,30])
-                
-                box(-0.55,1.3,1.1,0.175,0.6*0.3,1.2,[0,0,0],[1.2,0,0.4],[0,0,30])
-                box(-0.55,1.2,2,0.175,0.5*0.3,1,[20,0,0],[1.2,0,0.4],[0,0,30])
-                box(-0.55,0.9,2.6,0.175,0.3*0.5,0.5,[40,0,0],[1.2,0,0.4],[0,0,30])
-                
-                box(-0.55,1.95,0.1,0.15,0.15,1.3,[20,0,0],[0.1,0,0],[0,0,30])
-                box(-0.55,1.25,0.1,0.15,0.15,0.9,[-20,0,0],[0.1,0,0],[0,0,30])
-                
+                const black=[0.035,0.018,0.045],red=[1,0.025,0.04],purple=[0.31,0.035,0.49]
+                const prism=(points,thickness,color)=>box.bssDarkScythePrism(points,thickness,color)
+                // Keep the original grip axis and 30-degree attachment rotation.
+                box(-0.55,0.48,0.55,0.17,1.65,0.17,false,purple,[0,0,30])
+                box(-0.55,-0.25,0.55,0.21,0.35,0.21,false,[0.48,0.035,0.65],[0,0,30])
+                box(-0.55,1.23,0.55,0.19,0.43,0.19,false,black,[0,0,30])
+                for(const y of [0.08,0.48,0.88])box(-0.55,y,0.55,0.185,0.07,0.185,false,[0.20,0.025,0.31],[0,0,30])
+                // Convex blade panels form a continuous tapered crescent.
+                const upper=[[1.40,0.42],[1.96,0.82],[2.12,1.36],[1.98,1.94],[1.66,2.52],[1.19,3.12]]
+                const lower=[[1.21,0.53],[1.53,0.95],[1.73,1.43],[1.66,1.96],[1.43,2.52],[1.19,3.12]]
+                for(let i=0;i<upper.length-1;i++){
+                    const p=[lower[i],lower[i+1],upper[i+1],upper[i]]
+                    if(i===upper.length-2)p.splice(1,1)
+                    prism(p,0.17,black)
+                    const rim=(a,b)=>[a[0]*0.55+b[0]*0.45,a[1]*0.55+b[1]*0.45]
+                    const q=[rim(upper[i],lower[i]),rim(upper[i+1],lower[i+1]),upper[i+1],upper[i]]
+                    if(i===upper.length-2)q.splice(1,1)
+                    prism(q,0.21,red)
+                }
+                // Angular black mounting collar and red spine teeth.
+                prism([[1.13,0.35],[1.65,0.38],[1.72,0.75],[1.35,0.94]],0.25,black)
+                prism([[1.65,0.77],[2.06,0.77],[1.99,1.05]],0.19,red)
+                prism([[2.05,1.17],[2.33,1.38],[2.09,1.57]],0.18,[1,0.03,0.14])
+                prism([[1.99,1.78],[2.15,2.03],[1.81,2.20]],0.17,[0.88,0.015,0.08])
             },
             ability:function(arr){
                 
