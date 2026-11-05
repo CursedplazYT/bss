@@ -21262,21 +21262,31 @@ function BeeSwarmSimulator(DATA){
                 }
             }
             
-            // Dedicated convex-prism helper used only by the Dark Scythe model.
-            if(!this.isStatic)addBox.bssDarkScythePrism=function(points,thickness,color){
-                const q=quat.fromEuler([],0,0,30),layers=[]
-                for(const x of [-0.55-thickness/2,-0.55+thickness/2]){
-                    layers.push(points.map(p=>vec3.transformMat4([],vec3.transformQuat([],[x,p[0],p[1]],q),DIS.matrix)))
+            // Dedicated silhouette extrusion; only the Dark Scythe uses this helper.
+            if(!this.isStatic)addBox.bssDarkScythePrism=function(outline,thickness,color){
+                const points=outline.map(p=>p.slice()),cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
+                let area=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];area+=a[0]*b[1]-b[0]*a[1]}
+                if(area<0)points.reverse()
+                const remaining=points.map((_,i)=>i),caps=[]
+                while(remaining.length>3){
+                    let found=false
+                    for(let i=0;i<remaining.length;i++){
+                        const a=remaining[(i+remaining.length-1)%remaining.length],b=remaining[i],c=remaining[(i+1)%remaining.length]
+                        if(cross(points[a],points[b],points[c])<=1e-10)continue
+                        if(remaining.some(j=>j!==a&&j!==b&&j!==c&&cross(points[a],points[b],points[j])>=-1e-10&&cross(points[b],points[c],points[j])>=-1e-10&&cross(points[c],points[a],points[j])>=-1e-10))continue
+                        caps.push([a,b,c]);remaining.splice(i,1);found=true;break
+                    }
+                    if(!found)throw new Error('Invalid Dark Scythe outline')
                 }
+                caps.push(remaining.slice())
+                const q=quat.fromEuler([],0,0,30),layers=[]
+                for(const x of [-0.55-thickness/2,-0.55+thickness/2])layers.push(points.map(p=>vec3.transformMat4([],vec3.transformQuat([],[x,p[0],p[1]],q),DIS.matrix)))
                 const triangle=(a,b,c)=>{
                     const normal=vec3.normalize([],vec3.cross([],vec3.sub([],b,a),vec3.sub([],c,a))),base=verts.length/9
                     for(const p of [a,b,c])verts.push(...p,...color,...normal)
                     index.push(base,base+1,base+2)
                 }
-                // Make winding consistent for either polygon direction.
-                let area=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];area+=a[0]*b[1]-b[0]*a[1]}
-                if(area<0)for(const layer of layers)layer.reverse()
-                for(let i=1;i<points.length-1;i++){triangle(layers[1][0],layers[1][i],layers[1][i+1]);triangle(layers[0][0],layers[0][i+1],layers[0][i])}
+                for(const [a,b,c] of caps){triangle(layers[1][a],layers[1][b],layers[1][c]);triangle(layers[0][c],layers[0][b],layers[0][a])}
                 for(let i=0;i<points.length;i++){const j=(i+1)%points.length;triangle(layers[0][i],layers[0][j],layers[1][j]);triangle(layers[0][i],layers[1][j],layers[1][i])}
             }
 
@@ -21958,30 +21968,14 @@ function BeeSwarmSimulator(DATA){
             collectAmount:20,
             cooldown:0.4,
             mesh:function(box,cylinder,sphere,star){
-                const black=[0.035,0.018,0.045],red=[1,0.025,0.04],purple=[0.31,0.035,0.49]
-                const prism=(points,thickness,color)=>box.bssDarkScythePrism(points,thickness,color)
-                // Keep the original grip axis and 30-degree attachment rotation.
-                box(-0.55,0.48,0.55,0.17,1.65,0.17,false,purple,[0,0,30])
-                box(-0.55,-0.25,0.55,0.21,0.35,0.21,false,[0.48,0.035,0.65],[0,0,30])
-                box(-0.55,1.23,0.55,0.19,0.43,0.19,false,black,[0,0,30])
-                for(const y of [0.08,0.48,0.88])box(-0.55,y,0.55,0.185,0.07,0.185,false,[0.20,0.025,0.31],[0,0,30])
-                // Convex blade panels form a continuous tapered crescent.
-                const upper=[[1.40,0.42],[1.96,0.82],[2.12,1.36],[1.98,1.94],[1.66,2.52],[1.19,3.12]]
-                const lower=[[1.21,0.53],[1.53,0.95],[1.73,1.43],[1.66,1.96],[1.43,2.52],[1.19,3.12]]
-                for(let i=0;i<upper.length-1;i++){
-                    const p=[lower[i],lower[i+1],upper[i+1],upper[i]]
-                    if(i===upper.length-2)p.splice(1,1)
-                    prism(p,0.17,black)
-                    const rim=(a,b)=>[a[0]*0.55+b[0]*0.45,a[1]*0.55+b[1]*0.45]
-                    const q=[rim(upper[i],lower[i]),rim(upper[i+1],lower[i+1]),upper[i+1],upper[i]]
-                    if(i===upper.length-2)q.splice(1,1)
-                    prism(q,0.21,red)
-                }
-                // Angular black mounting collar and red spine teeth.
-                prism([[1.13,0.35],[1.65,0.38],[1.72,0.75],[1.35,0.94]],0.25,black)
-                prism([[1.65,0.77],[2.06,0.77],[1.99,1.05]],0.19,red)
-                prism([[2.05,1.17],[2.33,1.38],[2.09,1.57]],0.18,[1,0.03,0.14])
-                prism([[1.99,1.78],[2.15,2.03],[1.81,2.20]],0.17,[0.88,0.015,0.08])
+                // Silhouette traced from the supplied side view, fitted to the original grip.
+                const point=([u,v])=>[0.55+((u-460)*-0.39+(v-370)*-0.92)*0.0065,0.55+((u-460)*-0.92+(v-370)*0.39)*0.0065]
+                const shape=(outline,thickness,color)=>box.bssDarkScythePrism(outline.map(point),thickness,color)
+                const black=[0.025,0.022,0.03]
+                shape([[480,20],[401,198],[526,128],[428,224],[443,240],[436,252],[454,306],[448,312],[468,365],[451,373],[415,319],[408,310],[404,314],[390,274],[380,263],[344,263],[282,292],[243,320],[224,354],[205,436],[195,340],[207,312],[225,290],[352,222],[360,185]],0.17,black)
+                shape([[381,248],[390,273],[343,284],[291,312],[254,348],[231,396],[213,457],[211,390],[218,349],[237,317],[281,290],[348,252]],0.19,[0.66,0.018,0.035])
+                shape([[451,369],[466,362],[508,450],[493,459]],0.15,[0.26,0.025,0.39])
+                shape([[493,459],[508,450],[529,479],[554,534],[518,507],[490,470]],0.18,[0.37,0.02,0.51])
             },
             ability:function(arr){
                 
