@@ -35079,6 +35079,7 @@ function createBssAudio(){
     panel.style.cssText='position:fixed;bottom:12px;right:12px;z-index:100000;background:#fff4cb;color:#302508;border:2px solid #b58a15;border-radius:10px;padding:8px;font:14px Arial;max-width:320px;max-height:70vh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 2px 10px #0004;user-select:auto'
     panel.innerHTML='<summary style="cursor:pointer">Audio</summary><div style="display:grid;gap:8px;padding-top:10px"><button type="button" data-mute style="width:auto">Mute</button><label>Music <input data-music type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>SSA / Stars <input data-stars type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>Effects <input data-effects type="range" min="0" max="1" step="0.01" style="width:140px"></label><label>Field music <select data-field-music style="max-width:180px"><option value="auto">Automatic</option><option value="regular">Regular (Wax)</option><option value="beesmas">Beesmas (Drone)</option></select></label><label>Track <select data-track style="max-width:180px"></select></label><small data-status>Click or press a key to enable audio.</small></div>'
     document.body.appendChild(panel)
+    bssMountToolbarControl(panel,'Audio')
     const status=panel.querySelector('[data-status]'),mute=panel.querySelector('[data-mute]'),select=panel.querySelector('[data-track]')
     const tracks=['wax','bpatrol','overflowin4','mountaincall','vendor','antmarch1','stickbug','digitize','rbcloading','crawlers','starhall','gbtune1','drone','hibernation','nectar']
     for(const name of ['auto',...tracks]){
@@ -35418,6 +35419,7 @@ function createBssGraphics(){
     panel.style.cssText='position:fixed;bottom:56px;right:12px;z-index:100001;background:#edf5ff;color:#18283e;border:2px solid #55739b;border-radius:10px;padding:8px;font:14px Arial;max-width:290px;max-height:70vh;overflow:auto;box-shadow:0 2px 10px #0004;user-select:auto'
     panel.innerHTML='<summary style="cursor:pointer">Graphics</summary><div style="display:grid;gap:9px;padding-top:10px"><button data-low type="button" style="width:auto;height:auto;padding:6px">Chromebook preset</button><button data-reset type="button" style="width:auto;height:auto;padding:6px">Full graphics</button><label>Flame particles <output data-flames-value></output><input data-flames type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Other particles <output data-particles-value></output><input data-particles type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>SSA star opacity <output data-starOpacity-value></output><input data-starOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Dupe token opacity <output data-dupeOpacity-value></output><input data-dupeOpacity type="range" min="0" max="1" step="0.05" style="width:100%"></label><label>Render resolution <output data-scale-value></output><input data-scale type="range" min="0.4" max="1" step="0.05" style="width:100%"></label><label><input data-showBubbles type="checkbox" style="height:auto"> Show bubbles</label><label><input data-hideSpicyBees type="checkbox" style="height:auto"> Hide Spicy Bee summons</label><label><input data-explosions type="checkbox" style="height:auto"> Decorative explosions</label><label><input data-trails type="checkbox" style="height:auto"> Trails</label><label><input data-pollenText type="checkbox" style="height:auto"> Floating pollen numbers</label><label><input data-showGlitches type="checkbox" style="height:auto"> Field glitch effects</label><small>Hidden bees and flames still work normally. Lower resolution makes the world less sharp; menus stay sharp. Settings save automatically.</small></div>'
     document.body.appendChild(panel)
+    bssMountToolbarControl(panel,'Graphics')
     const audioPanel=document.getElementById('bss-audio-controls')
     if(audioPanel)audioPanel.addEventListener('toggle',()=>{if(audioPanel.open)panel.open=false})
     panel.addEventListener('toggle',()=>{if(panel.open&&audioPanel)audioPanel.open=false})
@@ -35805,4 +35807,48 @@ function bssConversionHoney(pollen,...multipliers){
     let n=bssPositiveAmount(pollen)
     for(const m of multipliers){if(!bssValidHoney(m))return 0;n*=m;if(!Number.isFinite(n))return 0}
     return Math.ceil(n)
+}
+
+// Compact toolbar controls styled to match the existing white game icons.
+function bssMountToolbarControl(panel,label){
+    const toolbar=document.getElementById('UIBar')
+    if(!toolbar)return
+    if(!document.getElementById('bss-toolbar-controls-style')){
+        const css=document.createElement('style');css.id='bss-toolbar-controls-style'
+        css.textContent=`
+#UIBar{display:flex;align-items:center;gap:4px;width:max-content!important;max-width:calc(100vw - 14px);height:30px!important;position:relative;overflow:visible}
+#UIBar>svg{flex:0 0 30px}
+#UIBar .bss-toolbar-control{position:relative;flex:0 0 30px;width:30px;height:30px;margin:0;padding:0;border:0;border-radius:2px;background:transparent;color:white;box-shadow:none;overflow:visible;max-height:none;font:14px Arial;user-select:auto}
+#UIBar .bss-toolbar-control>summary{display:flex;align-items:center;justify-content:center;list-style:none;width:30px;height:30px;padding:0;cursor:pointer;border-radius:2px;transition:background-color .15s}
+#UIBar .bss-toolbar-control>summary::-webkit-details-marker{display:none}
+#UIBar .bss-toolbar-control>summary:hover,#UIBar .bss-toolbar-control[open]>summary{background:rgba(255,255,255,.2)}
+#UIBar .bss-toolbar-control>summary:focus-visible{outline:2px solid white;outline-offset:1px}
+#UIBar .bss-toolbar-control>summary svg{width:30px;height:30px;pointer-events:none}
+#UIBar .bss-toolbar-control>div{position:fixed;z-index:100000;box-sizing:border-box;width:310px;max-width:calc(100vw - 14px);max-height:55vh;overflow:auto;overscroll-behavior:contain;padding:12px!important;background:rgba(55,55,55,.97);border:2px solid rgba(220,220,220,.85);border-radius:3px;box-shadow:0 3px 8px #0005;color:white;font:14px/1.35 Arial;text-align:left}
+#UIBar .bss-toolbar-control input[type=range]{accent-color:#ddd}
+#UIBar .bss-toolbar-control button,#UIBar .bss-toolbar-control select{font:14px Arial;border-radius:3px}
+`
+        document.head.appendChild(css)
+    }
+    panel.className='bss-toolbar-control';panel.style.cssText=''
+    const summary=panel.querySelector('summary')
+    summary.setAttribute('title',label);summary.setAttribute('aria-label',label)
+    const icon=label==='Graphics'?'<rect x="3" y="5" width="24" height="17" rx="2" fill="white"/><path d="M6 8H24V19H6Z" fill="#bdbdbd"/><path d="M13 22H17V25H23V28H7V25H13Z" fill="white"/><path d="M8 16L12 12L16 16L20 10L23 17H8Z" fill="white"/>':'<path d="M3 11H9L16 5V25L9 19H3Z" fill="white"/><path d="M20 10Q26 15 20 20M24 6Q34 15 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>'
+    summary.innerHTML='<svg viewBox="0 0 32 30" aria-hidden="true">'+icon+'</svg>'
+    toolbar.appendChild(panel)
+    const position=()=>{
+        const box=summary.getBoundingClientRect(),content=panel.querySelector('div')
+        content.style.left=Math.max(7,Math.min(box.left,window.innerWidth-317))+'px'
+        content.style.top=(box.bottom+6)+'px'
+    }
+    panel.addEventListener('toggle',()=>{
+        if(panel.open){
+            for(const id of ['bss-audio-controls','bss-graphics-controls']){const other=document.getElementById(id);if(other&&other!==panel)other.open=false}
+            position()
+        }
+    })
+    window.addEventListener('resize',()=>{if(panel.open)position()})
+    document.addEventListener('pointerdown',e=>{if(panel.open&&!panel.contains(e.target))panel.open=false},{capture:true})
+    panel.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.open=false;summary.focus()}e.stopPropagation()})
+    for(const event of ['pointerdown','pointerup','click','keyup','touchstart','touchend'])panel.addEventListener(event,e=>e.stopPropagation())
 }
