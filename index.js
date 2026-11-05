@@ -35852,3 +35852,5 @@ function bssMountToolbarControl(panel,label){
     panel.addEventListener('keydown',e=>{if(e.key==='Escape'){panel.open=false;summary.focus()}e.stopPropagation()})
     for(const event of ['pointerdown','pointerup','click','keyup','touchstart','touchend'])panel.addEventListener(event,e=>e.stopPropagation())
 }
+
+console.info('BSS build: scythe-two-spikes-toolbar-v3');
