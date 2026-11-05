@@ -10861,9 +10861,10 @@ function BeeSwarmSimulator(DATA){
                     if(this.convertTimer<=0){
                         
                         this.state='moveToHiveToConvert'
-                        player.honey+=Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1))
+                        const honeyEarned=bssConversionHoney(this.pollen,player.honeyAtHive,player.honeyPerPollen,this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1)
+                        player.honey+=honeyEarned
                         
-                        textRenderer.add(Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1)),[(player.beeWorkPosition||player.body.position).x,(player.beeWorkPosition||player.body.position).y+Math.random()*2+0.5,(player.beeWorkPosition||player.body.position).z],COLORS.honey,0,'+')
+                        textRenderer.add(honeyEarned,[(player.beeWorkPosition||player.body.position).x,(player.beeWorkPosition||player.body.position).y+Math.random()*2+0.5,(player.beeWorkPosition||player.body.position).z],COLORS.honey,0,'+')
                         
                         this.pollen=0
                         
@@ -10900,7 +10901,8 @@ function BeeSwarmSimulator(DATA){
                         this.state='convertBalloon'
                         this.convertTimer=this.convertSpeed
                         
-                        let amountToTake=Math.min(Math.round(this.convertAmount*player.convertRate*(this.type==='buoyant'?this.gifted?4:3:1)*player[beeInfo[this.type].color+'ConvertRate']*player.convertRateAtHive*(this.type==='tabby'?player.tabbyLoveStacks:1)),player.hiveBalloon.pollen)
+                        bssCleanHiveBalloon(player.hiveBalloon)
+                        let amountToTake=bssTakeBalloonPollen(this.convertAmount*player.convertRate*(this.type==='buoyant'?this.gifted?4:3:1)*player[beeInfo[this.type].color+'ConvertRate']*player.convertRateAtHive*(this.type==='tabby'?player.tabbyLoveStacks:1),player.hiveBalloon.pollen)
                         
                         if(amountToTake===player.hiveBalloon.pollen){
                             
@@ -10919,7 +10921,7 @@ function BeeSwarmSimulator(DATA){
                     
                     if(!player.convertingBalloon){
                         
-                        player.hiveBalloon.pollen+=this.pollen
+                        player.hiveBalloon.pollen=bssAddBalloonPollen(player.hiveBalloon.pollen,this.pollen)
                         this.pollen=0
                         this.state='moveToPlayer'
                         return
@@ -10931,9 +10933,10 @@ function BeeSwarmSimulator(DATA){
                     if(this.convertTimer<=0){
                         
                         this.state='moveToHiveToConvertBalloon'
-                        player.honey+=Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1))
+                        const honeyEarned=bssConversionHoney(this.pollen,player.honeyAtHive,player.honeyPerPollen,this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1)
+                        player.honey+=honeyEarned
                         
-                        textRenderer.add(Math.ceil(this.pollen*player.honeyAtHive*player.honeyPerPollen*(this.type==='diamond'?(1.4+this.level*0.03)*(this.gifted?2:1):1)),[(player.beeWorkPosition||player.body.position).x,(player.beeWorkPosition||player.body.position).y+Math.random()*2+0.5,(player.beeWorkPosition||player.body.position).z],COLORS.honey,0,'+')
+                        textRenderer.add(honeyEarned,[(player.beeWorkPosition||player.body.position).x,(player.beeWorkPosition||player.body.position).y+Math.random()*2+0.5,(player.beeWorkPosition||player.body.position).z],COLORS.honey,0,'+')
                         
                         this.pollen=0
                         
@@ -12353,8 +12356,8 @@ function BeeSwarmSimulator(DATA){
             
             if(deflated===false){
                 
-                player.hiveBalloon.pollen+=this.pollen
-                player.hiveBalloon.maxPollen+=this.pollen
+                player.hiveBalloon.pollen=bssAddBalloonPollen(player.hiveBalloon.pollen,this.pollen)
+                player.hiveBalloon.maxPollen=bssAddBalloonPollen(player.hiveBalloon.maxPollen,this.pollen)
                 
             }
             
@@ -24148,6 +24151,7 @@ function BeeSwarmSimulator(DATA){
         out.hiveBalloon={pollen:0,size:0,displaySize:0,maxPollen:0,blessing:0,deflateTimer:0}
         
         out.updateHiveBalloon=function(){
+            bssCleanHiveBalloon(out.hiveBalloon)
             
             if(!out.hiveBalloon.pollen){
 
@@ -24185,10 +24189,7 @@ function BeeSwarmSimulator(DATA){
                 out.hiveBalloon.deflateTimer=10
                 out.hiveBalloon.pollen=Math.round(out.hiveBalloon.pollen)
                 
-                let f=out.hiveBalloon.pollen/out.capacity
-                
-                f*=0.00045
-                out.hiveBalloon.pollen-=out.hiveBalloon.pollen*f
+                out.hiveBalloon.pollen=bssDeflateHiveBalloon(out.hiveBalloon.pollen,out.capacity)
             }
             
             out.hiveBalloon.pollen=Math.round(out.hiveBalloon.pollen)
@@ -25584,7 +25585,7 @@ function BeeSwarmSimulator(DATA){
         out.flowerIn={}
         out._flowerIn={}
         out.pollen=0
-        out.honey=0
+        bssInstallHoneyGuard(out)
         
         out.cameraRaycastPoint=new CANNON.Vec3()
         out.cameraRaycastResult=new CANNON.RaycastResult()
@@ -33675,6 +33676,7 @@ function BeeSwarmSimulator(DATA){
         save.version='2.0.0'
         save.extraInfo=player.extraInfo
         save.honey=player.honey
+        save.honeyLastValid=player.honey
         save.pollen=player.pollen
         save.hive=[]
         save.items={}
@@ -33903,7 +33905,7 @@ function BeeSwarmSimulator(DATA){
         }
         
         player.extraInfo=save.extraInfo
-        player.honey=save.honey
+        player.honey=bssRecoverSavedHoney(save)
         player.pollen=save.pollen
         player.currentGear=save.currentGear
         for(let i in player.currentGear)if(i.indexOf('Snail')>-1){player.currentGear[i.replaceAll('Snail','Shell')]=player.currentGear[i].slice();delete player.currentGear[i]}
@@ -33911,7 +33913,7 @@ function BeeSwarmSimulator(DATA){
         player.quests=save.quests
         player.isCrafting=save.isCrafting
         TIME=save.TIME
-        player.hiveBalloon=save.hiveBalloon
+        player.hiveBalloon=bssCleanHiveBalloon(save.hiveBalloon)
         player.discoveredBees=save.discoveredBees
         player.discoveredGifteds=save.discoveredGifteds
 
@@ -35734,4 +35736,50 @@ function bssNextComboLanding(f,px,pz,catches,random=Math.random){
         if(d>=minDistance&&d<=minDistance+3)candidates.push({x,z})
     }
     return candidates.length?candidates[Math.min(candidates.length-1,Math.floor(random()*candidates.length))]:farthest||{x:Math.max(0,(f.width-1)/2),z:Math.max(0,(f.length-1)/2)}
+}
+
+// BSS balloon deflation and honey integrity fix v9.
+function bssValidHoney(n){return typeof n==='number'&&Number.isFinite(n)&&n>=0}
+function bssPositiveAmount(n){return bssValidHoney(n)?n:0}
+function bssInstallHoneyGuard(player){
+    let balance=0,warned=false
+    Object.defineProperty(player,'honey',{enumerable:true,configurable:true,get(){return balance},set(value){
+        if(bssValidHoney(value)){balance=value;return}
+        if(!warned){warned=true;console.warn('Blocked invalid honey calculation; kept the last valid balance.')}
+    }})
+}
+function bssRecoverSavedHoney(save){
+    if(bssValidHoney(save.honey))return save.honey
+    if(bssValidHoney(save.honeyLastValid))return save.honeyLastValid
+    // Infinity is serialized as null, so the original amount cannot be inferred.
+    const text=window.prompt('This save has an invalid honey balance. Your bees, gear and other progress will be kept. Enter your last known honey amount (digits, no commas). Cancel leaves honey at 0; keep your original save backup.', '')
+    if(text!==null&&text.trim()!==''){
+        const n=Number(text.replace(/,/g,''));if(bssValidHoney(n))return n
+    }
+    return 0
+}
+function bssCleanHiveBalloon(balloon){
+    const b=balloon&&typeof balloon==='object'?balloon:{}
+    for(const k of ['pollen','maxPollen','size','displaySize','blessing','deflateTimer'])b[k]=bssPositiveAmount(b[k])
+    b.maxPollen=Math.max(b.maxPollen,b.pollen)
+    return b
+}
+function bssDeflateHiveBalloon(pollen,capacity){
+    const p=bssPositiveAmount(pollen),c=bssPositiveAmount(capacity)
+    if(!p||!c)return p
+    const fraction=Math.max(0,Math.min(1,(p/c)*0.00045))
+    return Math.max(0,Math.round(p*(1-fraction)))
+}
+function bssTakeBalloonPollen(rate,available){
+    const p=bssPositiveAmount(available)
+    return Math.min(bssPositiveAmount(Math.round(rate)),p)
+}
+function bssAddBalloonPollen(a,b){
+    const current=bssPositiveAmount(a),sum=current+bssPositiveAmount(b)
+    return Number.isFinite(sum)?sum:current
+}
+function bssConversionHoney(pollen,...multipliers){
+    let n=bssPositiveAmount(pollen)
+    for(const m of multipliers){if(!bssValidHoney(m))return 0;n*=m;if(!Number.isFinite(n))return 0}
+    return Math.ceil(n)
 }
